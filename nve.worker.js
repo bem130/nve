@@ -1,8 +1,14 @@
 console.log("✅worker started!");
 
+let dispsize = [1280,720]
 
 
-let dispsize = [1000,1000]
+let Mouse= {loc:[0,0]}
+self.addEventListener("message", (e) => {
+    if (e.data[0]=="MouseLoc") {
+        Mouse.loc = e.data[1]
+    }
+});
 
 class Draw {
     constructor() {
@@ -27,28 +33,77 @@ class Draw {
                 iarr[iarridx+2] = this.dpds[dpdsidx+2];
             }
         }
-        self.postMessage([iarr,dispsize]);
+        self.postMessage(["Out",iarr,dispsize]);
     }
 }
 
 draw = new Draw()
 
 
+cursorImg = [
+    [1,0,0,0,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0,0,0,0],
+    [1,2,1,0,0,0,0,0,0,0],
+    [1,2,2,1,0,0,0,0,0,0],
+    [1,2,2,2,1,0,0,0,0,0],
+    [1,2,2,2,2,1,0,0,0,0],
+    [1,2,2,2,2,2,1,0,0,0],
+    [1,2,2,2,2,2,2,1,0,0],
+    [1,2,2,2,2,2,2,2,1,0],
+    [1,1,2,2,2,2,2,2,1,1],
+]
+
+NeknajImg = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0],
+    [0,1,1,0,0,1,0,0,0,1,1,0,1,1,0,0,0,1,0,0,0,1,0],
+    [0,1,0,1,0,0,1,1,0,1,0,0,1,0,1,0,1,0,1,0,0,1,0],
+    [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0],
+]
+
 draw.update()
-for (i=0;i<100;i++) {
+function drawdisp() {
+
     for (ix=0;ix<dispsize[0];ix++) {
         for (iy=0;iy<dispsize[1];iy++) {
             draw.dot(ix,iy,[(ix)%255,(iy)%255,(ix+iy)%255])
         }
     }
-    
-    draw.update()
-    for (ix=0;ix<dispsize[0];ix++) {
-        for (iy=0;iy<dispsize[1];iy++) {
-            draw.dot(ix,iy,[(ix+100)%255,(iy+100)%255,(ix+iy+100)%255])
+    for (ix=50;ix<dispsize[0]-50;ix++) {
+        for (iy=50;iy<dispsize[1]-50;iy++) {
+            draw.dot(ix,iy,[200,200,200])
         }
     }
-    
+
+    for (ix=0;ix<NeknajImg[0].length;ix+=0.25) {
+        for (iy=0;iy<NeknajImg.length;iy+=0.25) {
+            let mx = 100
+            let my = 100
+            imx = Math.floor(ix)
+            imy = Math.floor(iy)
+            if (NeknajImg[imy][imx]==1) {
+                draw.dot(ix*4+mx,iy*4+my,[0,0,0])
+            }
+        }
+    }
+
+
+    for (ix=0;ix<cursorImg[0].length;ix++) {
+        for (iy=0;iy<cursorImg.length;iy++) {
+            if (cursorImg[iy][ix]==1) {
+                draw.dot(ix+Mouse.loc[0],iy+Mouse.loc[1],[0,0,0])
+            }
+            else if (cursorImg[iy][ix]==2) {
+                draw.dot(ix+Mouse.loc[0],iy+Mouse.loc[1],[255,255,255])
+            }
+        }
+    }
+
     draw.update()
 
+    setTimeout(drawdisp,50)
+
 }
+drawdisp()
+
+
+

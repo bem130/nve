@@ -18,16 +18,25 @@ let displayy = 10
 {
     const NveWorker = new Worker("nve.worker.js");
     NveWorker.addEventListener("message", (e) => {
-    let co = document.getElementById("imgOut");
-        displayx = e.data[1][0]
-        displayy = e.data[1][1]
-        resizeImg()
-        co.height=displayy;co.width=displayx;co.getContext('2d').putImageData(new ImageData(e.data[0],displayx,displayy),0,0);
+        if (e.data[0]=="Out") {
+            let co = document.getElementById("imgOut");
+            displayx = e.data[2][0]
+            displayy = e.data[2][1]
+            resizeImg()
+            co.height=displayy;co.width=displayx;co.getContext('2d').putImageData(new ImageData(e.data[1],displayx,displayy),0,0);
 
-        etime = Date.now()
-        console.log("fps:",1/((etime-stime)/1000))
-        stime = Date.now()
+            etime = Date.now()
+            //console.log("fps:",1/((etime-stime)/1000))
+            stime = Date.now()
+        }
     });
+    
+document.getElementById("imgOut").onmousemove = onmousemove;
+
+onmousemove = function(e) {
+    NveWorker.postMessage(["MouseLoc",[e.offsetX,e.offsetY]]);
+}
+    
 
 }
 
@@ -58,6 +67,16 @@ window.onresize = resizeImg;
 
 </script>
 <style>
+    body::-webkit-scrollbar {
+        display: none;
+    }
+    body {
+        overflow: hidden;
+        -ms-overflow-style: none;    /* IE, Edge 対応 */
+        scrollbar-width: none;       /* Firefox 対応 */
+        background: rgb(0,0,0);
+        cursor: unset;
+    }
     #img_area {
         top: 0;
         left: 0;
@@ -66,5 +85,7 @@ window.onresize = resizeImg;
     }
     #imgOut {
         transform-origin: top left;
+        cursor: none;
     }
+
 </style>
