@@ -11,42 +11,31 @@
 </html>
 <script>
 
-let dispsize = [50,50]
+let stime = Date.now()
 
-class Draw {
-    constructor() {
-        this.dpds = new Uint8ClampedArray(dispsize[0]*dispsize[1]*3).fill(0);
-    }
-    dot(x,y,rgb) {
-        let idx = (y*dispsize[0]+x)*3;
-        this.dpds[idx+0] = rgb[0]
-        this.dpds[idx+1] = rgb[1]
-        this.dpds[idx+2] = rgb[2]
-    }
-    update() {
-        let x = dispsize[0]
-        let y = dispsize[1]
-        let iarr = new Uint8ClampedArray(x*y*4).fill(255);
-        for (let iy = 0; iy < y; iy++) {
-            for (let ix = 0; ix < x; ix++) {
-                let iarridx = (iy*x+ix)*4;
-                let dpdsidx = (iy*x+ix)*3;
-                iarr[iarridx+0] = this.dpds[dpdsidx+0];
-                iarr[iarridx+1] = this.dpds[dpdsidx+1];
-                iarr[iarridx+2] = this.dpds[dpdsidx+2];
-            }
-        }
-        let co = document.getElementById("imgOut");
-        co.height=y;co.width=x;co.getContext('2d').putImageData(new ImageData(iarr,x,y),0,0);
-    }
+let displayx = 10
+let displayy = 10
+{
+    const NveWorker = new Worker("nve.worker.js");
+    NveWorker.addEventListener("message", (e) => {
+    let co = document.getElementById("imgOut");
+        displayx = e.data[1][0]
+        displayy = e.data[1][1]
+        resizeImg()
+        co.height=displayy;co.width=displayx;co.getContext('2d').putImageData(new ImageData(e.data[0],displayx,displayy),0,0);
+
+        etime = Date.now()
+        console.log("fps:",1/((etime-stime)/1000))
+        stime = Date.now()
+    });
+
 }
-draw = new Draw()
-draw.dot(10,10,[255,255,255])
-draw.update()
+
+
 
 // resize window
 function resizeImg() {
-        dw = dispsize[0]; dh = dispsize[1];
+        dw = displayx; dh = displayy;
         let bottom_area = 0;let rw = 0;let rh = 0;
         let ww = window.innerWidth;
         let wh = window.innerHeight-bottom_area;
@@ -65,7 +54,6 @@ function resizeImg() {
         document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
     };
 window.onresize = resizeImg;
-resizeImg();
 
 
 </script>
