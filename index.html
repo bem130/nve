@@ -11,57 +11,43 @@
 </html>
 <script>
 
-let stime = Date.now()
 
-let displayx = 10
-let displayy = 10
 {
+
     const NveWorker = new Worker("nve.worker.js");
     NveWorker.addEventListener("message", (e) => {
-        if (e.data[0]=="Out") {
-            let co = document.getElementById("imgOut");
-            displayx = e.data[2][0]
-            displayy = e.data[2][1]
-            resizeImg()
-            co.height=displayy;co.width=displayx;co.getContext('2d').putImageData(new ImageData(e.data[1],displayx,displayy),0,0);
-
-            etime = Date.now()
-            //console.log("fps:",1/((etime-stime)/1000))
-            stime = Date.now()
+        switch (e.data[0]) {
+            default:
+                console.warn("no");
+            break;
         }
     });
-    
-document.getElementById("imgOut").onmousemove = onmousemove;
-
-onmousemove = function(e) {
-    NveWorker.postMessage(["MouseLoc",[e.offsetX,e.offsetY]]);
-}
-    
 
 }
 
 
-
+displayx = 10;
+displayy = 10;
 // resize window
 function resizeImg() {
-        dw = displayx; dh = displayy;
-        let bottom_area = 0;let rw = 0;let rh = 0;
-        let ww = window.innerWidth;
-        let wh = window.innerHeight-bottom_area;
-        let csc = 1;
-        hcsc = ww/dw; wcsc = wh/dh;
-        if (hcsc>wcsc) {
-            csc = wcsc; rw = (ww - dw*csc)/2;
-        }
-        else {
-            csc = hcsc; rh = (wh - dh*csc)/2;
-        }
-        document.getElementById("imgOut").style.marginTop = (rh).toString()+"px";
-        document.getElementById("imgOut").style.marginBottom = (rh).toString()+"px";
-        document.getElementById("imgOut").style.marginLeft = (rw).toString()+"px";
-        document.getElementById("imgOut").style.marginRight = (rw).toString()+"px";
-        document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
-    };
+    dw = displayx; dh = displayy;
+    let bottom_area = 0;let rw = 0;let rh = 0;
+    let ww = window.innerWidth;
+    let wh = window.innerHeight-bottom_area;
+    let csc = 1;
+    hcsc = ww/dw; wcsc = wh/dh;
+    if (hcsc>wcsc) {
+        csc = wcsc; rw = (ww - dw*csc)/2;
+    }
+    else {
+        csc = hcsc; rh = (wh - dh*csc)/2;
+    }
+    document.getElementById("imgOut").style.marginTop = (rh).toString()+"px";
+    document.getElementById("imgOut").style.marginBottom = (rh).toString()+"px";
+    document.getElementById("imgOut").style.marginLeft = (rw).toString()+"px";
+    document.getElementById("imgOut").style.marginRight = (rw).toString()+"px";
+    document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
+};
 window.onresize = resizeImg;
 
 
