@@ -7,16 +7,9 @@ class Display {
         this.dpds[adr] = c;
         return this;
     }
-    dot(x,y,rgb) {
-        let idx = (y*this.size[0]+x)*3;
-        this.dpds[idx+0] = rgb[0];
-        this.dpds[idx+1] = rgb[1];
-        this.dpds[idx+2] = rgb[2];
-        return this;
-    }
 }
 class NVM {
-    #prog;#imme;#memr;#istr;#ostr;#ispt;#ospt;#regi; // 宣言
+    #prog;#imme;#memr;#istr;#ostr;#ispt;#ospt;#regi;#labeladr; // 宣言
     constructor(program,args=[0]) { // 初期化
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
@@ -27,7 +20,7 @@ class NVM {
         this.#ispt = 0; // 標準入力ポインタ
         this.#ospt = 0; // 標準出力ポインタ
         this.#regi = [0,0,0,0,0]; // i p x a b
-        this.display = new Display(640,480)
+        this.display = new Display(640,480);
     }
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
@@ -72,41 +65,41 @@ class NVM {
             break;
 
             case 9: // movpx
-                this.#regi[1] = this.#regi[2]
+                this.#regi[1] = this.#regi[2];
             break;
             case 10: // movpv
-                this.#regi[1] = this.#imme[this.#regi[0]]
+                this.#regi[1] = this.#imme[this.#regi[0]];
             break;
             case 11: // movmx
-                this.#memr[this.#regi[1]] = this.#regi[2]
+                this.#memr[this.#regi[1]] = this.#regi[2];
             break;
             case 12: // movmi
-                this.#memr[this.#regi[1]] = this.#imme[this.#regi[0]]
+                this.#memr[this.#regi[1]] = this.#imme[this.#regi[0]];
             break;
 
             case 13: // movam
-                this.#regi[3] = this.#memr[this.#regi[1]]
+                this.#regi[3] = this.#memr[this.#regi[1]];
             break;
             case 14: // movbm
-                this.#regi[4] = this.#memr[this.#regi[1]]
+                this.#regi[4] = this.#memr[this.#regi[1]];
             break;
             case 15: // movxm
-                this.#regi[2] = this.#memr[this.#regi[1]]
+                this.#regi[2] = this.#memr[this.#regi[1]];
             break;
             case 16: // movai
-                this.#regi[3] = this.#imme[this.#regi[0]]
+                this.#regi[3] = this.#imme[this.#regi[0]];
             break;
             case 17: // movbi
-                this.#regi[4] = this.#imme[this.#regi[0]]
+                this.#regi[4] = this.#imme[this.#regi[0]];
             break;
             case 18: // movxi
-                this.#regi[2] = this.#imme[this.#regi[0]]
+                this.#regi[2] = this.#imme[this.#regi[0]];
             break;
             case 29: // movax
-                this.#regi[3] = this.#regi[2]
+                this.#regi[3] = this.#regi[2];
             break;
             case 20: // movbx
-                this.#regi[4] = this.#regi[2]
+                this.#regi[4] = this.#regi[2];
             break;
 
             case 21: // add
@@ -149,7 +142,7 @@ class NVM {
                 postMessage(["display",this.display]);
             break;
             case 33: // dotx
-                this.display.set(this.#imme[this.#regi[0]],this.#regi[2])
+                this.display.set(this.#imme[this.#regi[0]],this.#regi[2]);
             break;
 
             default:
@@ -158,9 +151,9 @@ class NVM {
         this.#regi[0]++;
         return this;
     }
-    runall() { // 最後まで命令を実行する(最大10000)
+    runall() { // 最後まで命令を実行する(最大100000)
         let cnt = 0;
-        while (cnt<10000&&!this.endRunning()) {cnt++;this.next();}
+        while (cnt<100000&&!this.endRunning()) {cnt++;this.next();}
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
@@ -178,7 +171,7 @@ class NVM {
             for (c=0;c<lines[l].length;c++) {
                 if (lines[l][c]==";") {break;}
             }
-            let tl = lines[l].slice(s,c)
+            let tl = lines[l].slice(s,c);
             if (tl.length==0) {continue;}
             let tls = tl.split(" ");
             tlss.push(tls);
@@ -197,7 +190,6 @@ class NVM {
                 labeladr[tlss[i][0].slice(0,tlss[i][0].length-1)] = ic;
             }
         }
-        console.log(labeladr)
         ic = 0;
         for (let i=0;i<tlss.length;i++) {
             if (tlss[i][0][tlss[i][0].length-1]==":") {continue;}
@@ -211,6 +203,7 @@ class NVM {
             }
             ic++;
         }
+        this.#labeladr = labeladr;
         return [prog,imme];
     }
     endRunning() {if(this.#regi[0]>=this.#prog.length){return true};return false;}
@@ -223,6 +216,7 @@ class NVM {
     getIptr() {return this.#regi[0]}
     getDptr() {return this.#regi[1]}
     getRegi() {return this.#regi}
+    getFunc() {return this.#labeladr}
 }
 
 code = `
