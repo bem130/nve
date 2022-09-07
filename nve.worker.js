@@ -1,15 +1,33 @@
+class Display {
+    constructor(x,y) {
+        this.size = [x,y]
+        this.dpds = new Uint8ClampedArray(x*y*3).fill(255);
+    }
+    set(adr,c) {
+        this.dpds[adr] = c;
+        return this;
+    }
+    dot(x,y,rgb) {
+        let idx = (y*this.size[0]+x)*3;
+        this.dpds[idx+0] = rgb[0];
+        this.dpds[idx+1] = rgb[1];
+        this.dpds[idx+2] = rgb[2];
+        return this;
+    }
+}
 class NVM {
     #prog;#imme;#memr;#istr;#ostr;#ispt;#ospt;#regi; // 宣言
     constructor(program,args=[0]) { // 初期化
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
         this.#imme = tbr[1]; // 即値
-        this.#memr = new Uint8Array(1024); // データ
-        this.#istr = new Uint8Array(args); // 標準入力
-        this.#ostr = new Uint8Array(1024); // 標準出力
+        this.#memr = new Int32Array(1024); // データ
+        this.#istr = new Int32Array(args); // 標準入力
+        this.#ostr = new Int32Array(1024); // 標準出力
         this.#ispt = 0; // 標準入力ポインタ
         this.#ospt = 0; // 標準出力ポインタ
         this.#regi = [0,0,0,0,0]; // i p x a b
+        this.display = new Display(640,480)
     }
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
@@ -127,6 +145,12 @@ class NVM {
             case 31: // lshift
                 this.#regi[2] = this.#regi[3]<<1;
             break;
+            case 32: // outdisp
+                postMessage(["display",this.display]);
+            break;
+            case 33: // dotx
+                this.display.set(this.#imme[this.#regi[0]],this.#regi[2])
+            break;
 
             default:
             break;
@@ -142,7 +166,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmv","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift"];
+        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmv","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -163,7 +187,7 @@ class NVM {
             if (tls[tls.length-1]==":") {icnt--;}
         }
         let prog = new Uint8ClampedArray(icnt);
-        let imme = new Uint8ClampedArray(icnt);
+        let imme = new Uint16Array(icnt);
         let ic = 0;
         let labeladr = {};
         for (let i=0;i<tlss.length;i++) {
@@ -205,7 +229,6 @@ code = `
 goto main
 
 main:
-    goto hw
 
 hw:
     movxi 72
@@ -217,6 +240,14 @@ hw:
     outx
     movxi 111
     outx
+
+disp:
+    outdisp
+    movxi 10
+    dotx 1
+    movxi 10
+    dotx 2
+    outdisp
 `
 runtime = new NVM(code)
 runtime.runall();

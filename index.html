@@ -17,6 +17,9 @@
     const NveWorker = new Worker("nve.worker.js");
     NveWorker.addEventListener("message", (e) => {
         switch (e.data[0]) {
+            case "display":
+                show(e.data[1]);
+            break;
             default:
                 console.warn("no");
             break;
@@ -25,12 +28,28 @@
 
 }
 
+function show(disp) {
+    let x = disp.size[0]
+    let y = disp.size[1]
+    let iarr = new Uint8ClampedArray(x*y*4).fill(255);
+    for (let iy = 0; iy < y; iy++) {
+        for (let ix = 0; ix < x; ix++) {
+            let iarridx = (iy*x+ix)*4;
+            let dpdsidx = (iy*x+ix)*3;
+            iarr[iarridx+0] = disp.dpds[dpdsidx+0];
+            iarr[iarridx+1] = disp.dpds[dpdsidx+1];
+            iarr[iarridx+2] = disp.dpds[dpdsidx+2];
+        }
+    }
+    let co = document.getElementById("imgOut");
+    co.height=y;co.width=x;co.getContext('2d').putImageData(new ImageData(iarr,x,y),0,0);
+    resizeImg(disp)
+    window.onresize = function() {resizeImg(disp)}
+}
 
-displayx = 100;
-displayy = 100;
 // resize window
-function resizeImg() {
-    dw = displayx; dh = displayy;
+function resizeImg(draw) {
+    dw = draw.size[0]; dh = draw.size[1];
     let bottom_area = 0;let rw = 0;let rh = 0;
     let ww = window.innerWidth;
     let wh = window.innerHeight-bottom_area;
@@ -48,7 +67,6 @@ function resizeImg() {
     document.getElementById("imgOut").style.marginRight = (rw).toString()+"px";
     document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
 };
-window.onresize = resizeImg;
 
 
 </script>
