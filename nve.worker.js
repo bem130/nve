@@ -39,18 +39,18 @@ class NVM {
             case 6: // eqgoto
                 if (this.#regi[2]==0) {
                     this.#regi[0] = this.#imme[this.#regi[0]];
-                    this.#regi[0]-=2;
+                    this.#regi[0]--;
                 }
             break;
             case 7: // uneqgoto
                 if (this.#regi[2]!=0) {
                     this.#regi[0] = this.#imme[this.#regi[0]];
-                    this.#regi[0]-=2;
+                    this.#regi[0]--;
                 }
             break;
             case 8: // goto
                 this.#regi[0] = this.#imme[this.#regi[0]];
-                this.#regi[0]-=2;
+                this.#regi[0]--;
             break;
 
             case 9: // movpx
@@ -169,11 +169,11 @@ class NVM {
         for (let i=0;i<tlss.length;i++) {
             ic++;
             if (tlss[i][0][tlss[i][0].length-1]==":") {
-                labeladr[tlss[i][0].slice(0,tlss[i][0].length-1)] = ic;
                 ic--;
+                labeladr[tlss[i][0].slice(0,tlss[i][0].length-1)] = ic;
             }
-            if (ins.indexOf(tlss[i][0])==-1) {ic--;continue;}
         }
+        console.log(labeladr)
         ic = 0;
         for (let i=0;i<tlss.length;i++) {
             if (tlss[i][0][tlss[i][0].length-1]==":") {continue;}
@@ -203,25 +203,20 @@ class NVM {
 
 code = `
 goto main
+
 main:
-    movai 1 ; set a to 1
-    movbi 1 ; set b to 1
-    add     ; a+b (1+1)
-    movpi 0 ; set mem-address to 0
-    movmx
+    goto hw
 
-    movai 7 ; set a to 7
-    movbi 9 ; set b to 9
-    mul     ; a*b (1+1)
-    movpi 1 ; set mem-address to 1
-    movmx
-
-    movam   ; set a to mem-address 1
-    movpi 0
-    movbm   ; set b to get mem-address 0
-    add     ; a+b (2+63)
-
-    outx    ; output the result (65,"A" in ASCII)
+hw:
+    movxi 72
+    outx
+    movxi 101
+    outx
+    movxi 108
+    outx
+    outx
+    movxi 111
+    outx
 `
 runtime = new NVM(code)
 runtime.runall();
