@@ -1,5 +1,3 @@
-console.log("✅worker started!");
-
 let dispsize = [1280,720]
 
 
