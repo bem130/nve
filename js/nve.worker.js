@@ -235,7 +235,6 @@ class NLPC {
             this.add("movpi",this.sptr);
             this.add("movxi",this.sstack);
             this.add("movmx");
-
         }
         this.add("label","main");
         this.push(10);
@@ -250,7 +249,6 @@ class NLPC {
         this.add("movxm");
         this.add("movpx");
         this.add("movmi",x);
-
         this.add("movax");
         this.add("dec");
         this.add("movpi",this.sptr);
@@ -258,6 +256,12 @@ class NLPC {
     }
     pop() {
         this.add("movpi",this.sptr);
+        this.add("movxm");
+        this.add("movax");
+        this.add("inc");
+        this.add("movpi",this.sptr);
+        this.add("movmx");
+        this.add("movpx");
         this.add("movxm");
     }
     add(ins,imme="") {
