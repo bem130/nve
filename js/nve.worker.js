@@ -180,7 +180,7 @@ class NVM {
             if (tls[tls.length-1]==":") {icnt--;}
         }
         let prog = new Uint8ClampedArray(icnt);
-        let imme = new Uint16Array(icnt);
+        let imme = new Uint32Array(icnt);
         let ic = 0;
         let labeladr = {};
         for (let i=0;i<tlss.length;i++) {
@@ -219,6 +219,56 @@ class NVM {
     getFunc() {return this.#labeladr}
 }
 
+class NLPC {
+    constructor (program) {
+        this.prog = program;
+    }
+    make() {
+        this.asm = "";
+        this.sstack = 1024-1; // for stack
+        this.sptr = 1024;
+
+        let code = this.prog;
+
+        this.add("goto","0prepare");
+        this.add("label","0prepare");
+        { // for stack
+            this.add("movpi",sptr);
+            this.add("movxi",sstack);
+            this.add("movmx");
+
+            this.add("goto","main");
+        }
+        this.add("label","main");
+        this.push(10);
+
+        return this.asm;
+    }
+    push(x) {
+        this.add("movxi",x);
+        this.add("movmx");
+
+        this.add("movpi",sptr);
+        this.add("movam");
+        this.add("movxi",sstack);
+        this.add("movmx");
+    }
+    add(ins,imme="") {
+        imme = imme.toString();
+        if (ins=="label") {
+            this.asm += imme+":"+"\n";
+            return;
+        }
+        if (imme.length>0) {
+            this.asm += ins+" "+imme+"\n";
+        }
+        else {
+            this.asm += ins+"\n";
+        }
+    }
+}
+
+let code
 code = `
 goto main
 
@@ -243,7 +293,11 @@ disp:
     dotx 2
     outdisp
 `
-runtime = new NVM(code)
+prog = `10 5 * 2 5 + -`;
+code = new NLPC(prog).make();
+
+console.log(code)
+runtime = new NVM(code);
 runtime.runall();
 
 console.log(runtime.getBinOut());
