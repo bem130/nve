@@ -73,75 +73,78 @@ class NVM {
             case 11: // movmx
                 this.#memr[this.#regi[1]] = this.#regi[2];
             break;
-            case 12: // movmi
+            case 12: // movmb
+                this.#memr[this.#regi[1]] = this.#regi[4];
+            break;
+            case 13: // movmi
                 this.#memr[this.#regi[1]] = this.#imme[this.#regi[0]];
             break;
 
-            case 13: // movam
+            case 14: // movam
                 this.#regi[3] = this.#memr[this.#regi[1]];
             break;
-            case 14: // movbm
+            case 15: // movbm
                 this.#regi[4] = this.#memr[this.#regi[1]];
             break;
-            case 15: // movxm
+            case 16: // movxm
                 this.#regi[2] = this.#memr[this.#regi[1]];
             break;
-            case 16: // movai
+            case 17: // movai
                 this.#regi[3] = this.#imme[this.#regi[0]];
             break;
-            case 17: // movbi
+            case 18: // movbi
                 this.#regi[4] = this.#imme[this.#regi[0]];
             break;
-            case 18: // movxi
+            case 19: // movxi
                 this.#regi[2] = this.#imme[this.#regi[0]];
             break;
-            case 19: // movax
+            case 20: // movax
                 this.#regi[3] = this.#regi[2];
             break;
-            case 20: // movbx
+            case 21: // movbx
                 this.#regi[4] = this.#regi[2];
             break;
 
-            case 21: // add
+            case 22: // add
                 this.#regi[2] = this.#regi[3]+this.#regi[4];
             break;
-            case 22: // sub
+            case 23: // sub
                 this.#regi[2] = this.#regi[3]-this.#regi[4];
             break;
-            case 23: // mul
+            case 24: // mul
                 this.#regi[2] = this.#regi[3]*this.#regi[4];
             break;
 
-            case 24: // and
+            case 25: // and
                 this.#regi[2] = Boolean(this.#regi[3])&&Boolean(this.#regi[4]);
             break;
-            case 25: // or
+            case 26: // or
             this.#regi[2] = Boolean(this.#regi[3])||Boolean(this.#regi[4]);
             break;
-            case 26: // xor
+            case 27: // xor
             this.#regi[2] = Boolean(this.#regi[3])^Boolean(this.#regi[4]);
             break;
-            case 27: // not
+            case 28: // not
             this.#regi[2] = !Boolean(this.#regi[3]);
             break;
 
-            case 28: // inc
+            case 29: // inc
                 this.#regi[2] = this.#regi[3]+1;
             break;
-            case 29: // dec
+            case 30: // dec
                 this.#regi[2] = this.#regi[3]-1;
             break;
 
-            case 30: // rshift
+            case 31: // rshift
                 this.#regi[2] = this.#regi[3]>>1;
             break;
-            case 31: // lshift
+            case 32: // lshift
                 this.#regi[2] = this.#regi[3]<<1;
             break;
-            case 32: // outdisp
+            case 33: // outdisp
                 postMessage(["display",this.display]);
             break;
-            case 33: // dotx
+            case 34: // dotx
                 this.display.set(this.#imme[this.#regi[0]],this.#regi[2]);
             break;
 
@@ -153,13 +156,13 @@ class NVM {
     }
     runall() { // 最後まで命令を実行する(最大100000)
         let cnt = 0;
-        while (cnt<100000&&!this.endRunning()) {cnt++;console.log(this.getRegi(),this.getData().slice(1020));this.next();}
+        while (cnt<100000&&!this.endRunning()) {cnt++;this.next();}
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmi","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
+        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmb","movmi","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -224,11 +227,25 @@ class NLPC {
         this.prog = program;
     }
     make() {
+        // 1021 - 1023
         this.asm = "";
-        this.sstack = 1023-1; // for stack
-        this.sptr = 1023; // address of the ponter
+        this.sstack = 1020-1; // for stack
+        this.sptr = 1020; // address of the ponter
 
         let code = this.prog;
+        let sp = code.split(" ");
+        console.log(sp);
+
+        let cr = [];
+        for (let i=0;i<sp.length;i++) {
+            if (["+","-","*"].indexOf(sp[i])!=-1) {
+                cr.push([2,sp[i]]);
+            }
+            else if (parseInt(sp[i])!=NaN) {
+                cr.push([0,parseInt(sp[i])]);
+            }
+        }
+        console.log(cr);
 
         this.add("label","0prepare");
         { // for stack
@@ -237,14 +254,43 @@ class NLPC {
             this.add("movmx");
         }
         this.add("label","main");
-        this.push(10);
-        this.push(150);
+        for (let i=0;i<cr.length;i++) {
+            switch (cr[i][0]) {
+                case 0:
+                    this.push(cr[i][1]);
+                break;
+                case 2:
+                    this.pop();
+                    this.add("movbx");
+                    this.pop();
+                    this.add("movax");
+                    this.add(["add","sub","mul"][["+","-","*"].indexOf(sp[i])]);
+                    this.pushx()
+                break;
+            }
+        }
         this.pop();
-        //this.pop();
+        this.add("outx");
 
         return this.asm;
     }
+    pushx() {
+        this.add(";","push x");
+
+        this.add("movbx");
+        this.add("movpi",this.sptr);
+        this.add("movxm");
+        this.add("movpx");
+        this.add("movax");
+        this.add("dec");
+        this.add("movmb");
+        this.add("movpi",this.sptr);
+        this.add("movmx");
+
+        this.add(";","end push");
+    }
     push(x) {
+        this.add(";","push "+x);
         this.add("movpi",this.sptr);
         this.add("movxm");
         this.add("movpx");
@@ -253,8 +299,10 @@ class NLPC {
         this.add("dec");
         this.add("movpi",this.sptr);
         this.add("movmx");
+        this.add(";","end push");
     }
     pop() {
+        this.add(";","pop");
         this.add("movpi",this.sptr);
         this.add("movxm");
         this.add("movax");
@@ -263,6 +311,8 @@ class NLPC {
         this.add("movmx");
         this.add("movpx");
         this.add("movxm");
+        this.add("movmi",0);
+        this.add(";","end pop");
     }
     add(ins,imme="") {
         imme = imme.toString();
