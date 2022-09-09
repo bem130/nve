@@ -67,7 +67,7 @@ class NVM {
             case 9: // movpx
                 this.#regi[1] = this.#regi[2];
             break;
-            case 10: // movpv
+            case 10: // movpi
                 this.#regi[1] = this.#imme[this.#regi[0]];
             break;
             case 11: // movmx
@@ -95,7 +95,7 @@ class NVM {
             case 18: // movxi
                 this.#regi[2] = this.#imme[this.#regi[0]];
             break;
-            case 29: // movax
+            case 19: // movax
                 this.#regi[3] = this.#regi[2];
             break;
             case 20: // movbx
@@ -128,7 +128,7 @@ class NVM {
             case 28: // inc
                 this.#regi[2] = this.#regi[3]+1;
             break;
-            case 39: // dec
+            case 29: // dec
                 this.#regi[2] = this.#regi[3]-1;
             break;
 
@@ -153,13 +153,13 @@ class NVM {
     }
     runall() { // 最後まで命令を実行する(最大100000)
         let cnt = 0;
-        while (cnt<100000&&!this.endRunning()) {cnt++;this.next();}
+        while (cnt<100000&&!this.endRunning()) {cnt++;console.log(this.getRegi(),this.getData().slice(1020));this.next();}
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmv","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
+        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmi","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -206,7 +206,7 @@ class NVM {
         this.#labeladr = labeladr;
         return [prog,imme];
     }
-    endRunning() {if(this.#regi[0]>=this.#prog.length){return true};return false;}
+    endRunning() {if(this.#regi[0]>this.#prog.length){return true};return false;}
     nextRead() {if(this.#prog[this.#regi[0]]==5){return true};return false;}
     getOut(format="utf-8") {return (new TextDecoder(format)).decode(new Uint8Array(this.#ostr.slice(0,this.#ospt)));} // 出力をテキストで取得
     getBinOut() {return new Uint8Array(this.#ostr.slice(0,this.#ospt))} // 出力を配列で取得
@@ -225,33 +225,40 @@ class NLPC {
     }
     make() {
         this.asm = "";
-        this.sstack = 1024-1; // for stack
-        this.sptr = 1024;
+        this.sstack = 1023-1; // for stack
+        this.sptr = 1023; // address of the ponter
 
         let code = this.prog;
 
-        this.add("goto","0prepare");
         this.add("label","0prepare");
         { // for stack
-            this.add("movpi",sptr);
-            this.add("movxi",sstack);
+            this.add("movpi",this.sptr);
+            this.add("movxi",this.sstack);
             this.add("movmx");
 
-            this.add("goto","main");
         }
         this.add("label","main");
         this.push(10);
+        this.push(150);
+        this.pop();
+        //this.pop();
 
         return this.asm;
     }
     push(x) {
-        this.add("movxi",x);
-        this.add("movmx");
+        this.add("movpi",this.sptr);
+        this.add("movxm");
+        this.add("movpx");
+        this.add("movmi",x);
 
-        this.add("movpi",sptr);
-        this.add("movam");
-        this.add("movxi",sstack);
+        this.add("movax");
+        this.add("dec");
+        this.add("movpi",this.sptr);
         this.add("movmx");
+    }
+    pop() {
+        this.add("movpi",this.sptr);
+        this.add("movxm");
     }
     add(ins,imme="") {
         imme = imme.toString();
