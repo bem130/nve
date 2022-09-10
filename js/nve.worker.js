@@ -63,10 +63,10 @@ class NVM {
                 this.push(this.pop()*this.pop());
             break;
             case 8: // and
-                this.push(Boolean(this.pop())&&Boolean(this.pop()));
+                this.push(Boolean(this.pop())||Boolean(this.pop()));
             break;
             case 9: // or
-                this.push(Boolean(this.pop())||Boolean(this.pop()));
+                this.push(Boolean(this.pop())&&Boolean(this.pop()));
             break;
             case 10: // xor
                 this.push(!(Boolean(this.pop())^Boolean(this.pop())));
@@ -213,42 +213,44 @@ class NLPC {
         this.sstack = 1020-1; // for stack
         this.sptr = 1020; // address of the ponter
 
-        let code = this.prog;
-        let sp = code.split(" ");
-        
+        let codes = this.prog.split("\n");
+
         let cr = [];
-        let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
-        let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
+        let vars = [];
+        let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out"];
+        let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out"];
         this.add("label","main");
 
-        let vars = [];
+        for (code of codes) {
 
-        let spa = sp.indexOf("=>");
-        debuglog(spa,sp);
-        if (!(spa==sp.length-2||spa==-1)) {
-            console.error("error");
-        }
-        else if (spa==sp.length-2) {
-            if (vars.indexOf(sp[sp.length-1])==-1) {
-                vars.push(sp[sp.length-1]);
+            let sp = code.split(" ");
+            let spa = sp.indexOf("=>");
+            debuglog(spa,sp);
+            if (!(spa==sp.length-2||spa==-1)) {
+                console.error("assignment error");
             }
-        }
-        else if (spa==-1) {
-        }
-
-        for (let i=0;i<sp.length;i++) {
-            if (oprs.indexOf(sp[i])!=-1) { // 演算子
-                cr.push([1,sp[i]]);
+            else if (spa==sp.length-2) {
+                if (vars.indexOf(sp[sp.length-1])==-1) {
+                    vars.push(sp[sp.length-1]);
+                }
             }
-            else if (sp[i]=="=>") { // 代入
-                cr.push([2,sp[i+1]]);
-                i++;
+            else if (spa==-1) {
             }
-            else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
-                cr.push([0,[["true","false"].indexOf(sp[i])]]);
-            }
-            else if (parseInt(sp[i])!=NaN) { // 数字
-                cr.push([0,parseInt(sp[i])]);
+    
+            for (let i=0;i<sp.length;i++) {
+                if (oprs.indexOf(sp[i])!=-1) { // 演算子
+                    cr.push([1,sp[i]]);
+                }
+                else if (sp[i]=="=>") { // 代入
+                    cr.push([2,sp[i+1]]);
+                    i++;
+                }
+                else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
+                    cr.push([0,[["true","false"].indexOf(sp[i])]]);
+                }
+                else if (parseInt(sp[i])!=NaN) { // 数字
+                    cr.push([0,parseInt(sp[i])]);
+                }
             }
         }
 
@@ -268,7 +270,6 @@ class NLPC {
                 break;
             }
         }
-        this.add("out")
 
         return this;
     }
@@ -298,31 +299,9 @@ class NLPC {
 }
 
 let code
-code = `
-goto main
-
-main:
-
-hw:
-    movxi 72
-    outx
-    movxi 101
-    outx
-    movxi 108
-    outx
-    outx
-    movxi 111
-    outx
-
-disp:
-    outdisp
-    movxi 10
-    dotx 1
-    movxi 10
-    dotx 2
-    outdisp
-`
-prog = `15 8 mul`;
+prog = `15 8 mul out => n1
+8 8 = out => n3
+true true and out => n4`;
 code = new NLPC(prog).make();
 
 console.log("");
