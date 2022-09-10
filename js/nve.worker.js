@@ -69,7 +69,7 @@ class NVM {
                 this.push(Boolean(this.pop())||Boolean(this.pop()));
             break;
             case 10: // xor
-                this.push(Boolean(this.pop())^Boolean(this.pop()));
+                this.push(!(Boolean(this.pop())^Boolean(this.pop())));
             break;
             case 11: // not
                 this.push(!Boolean(this.pop()))
@@ -198,7 +198,7 @@ class NVM {
     endRunning() {if(this.#regi[0]>this.#prog.length){return true};return false;}
     nextRead() {if(this.#prog[this.#regi[0]]==5){return true};return false;}
     getOut(format="utf-8") {return (new TextDecoder(format)).decode(new Uint8Array(this.#ostr.slice(0,this.#ospt)));} // 出力をテキストで取得
-    getBinOut() {return new Uint8Array(this.#ostr.slice(0,this.#ospt))} // 出力を配列で取得
+    getBinOut() {return new Int32Array(this.#ostr.slice(0,this.#ospt))} // 出力を配列で取得
     getProg() {return this.#prog}
     getImme() {return this.#imme}
     getData() {return this.#memr}
@@ -228,7 +228,7 @@ class NLPC {
 
         let vars = [];
 
-        let spa = sp.indexOf("=");
+        let spa = sp.indexOf("=>");
         console.log(spa,sp);
         if (!(spa==sp.length-2||spa==-1)) {
             console.error("error");
@@ -245,9 +245,12 @@ class NLPC {
             if (oprs.indexOf(sp[i])!=-1) { // 演算子
                 cr.push([1,sp[i]]);
             }
-            else if (sp[i]=="=") { // 代入
+            else if (sp[i]=="=>") { // 代入
                 cr.push([2,sp[i+1]]);
                 i++;
+            }
+            else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
+                cr.push([0,[["true","false"].indexOf(sp[i])]]);
             }
             else if (parseInt(sp[i])!=NaN) { // 数字
                 cr.push([0,parseInt(sp[i])]);
@@ -270,7 +273,7 @@ class NLPC {
                 break;
             }
         }
-        this.add("out");
+        this.add("out")
 
         return this;
     }
@@ -314,16 +317,24 @@ disp:
     dotx 2
     outdisp
 `
-prog = `10 50 + = n1`;
+prog = `15 8 mul`;
 code = new NLPC(prog).make();
 
+console.log("");
 console.log(code.prog);
-console.log(code.asm)
+console.log("");
+
+console.log("");
+console.log(code.asm);
+console.log("");
 
 runtime = new NVM(code.asm);
 
 
-runtime.runallshow();
+runtime.runall();
 
+console.log("");
 console.log(runtime.getBinOut());
+console.log("");
 console.log(runtime.getOut());
+console.log("");
