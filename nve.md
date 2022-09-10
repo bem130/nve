@@ -1,34 +1,34 @@
 
 ## 命令
 
-push n
-pop
-get
-out
-ssp n
+push n  
+pop  
+get  
+out  
+ssp n  
 
-add
-sub
-mul
-and
-or
-xor
-not
-buffer
-inc
-dec
-rshift
-lshift
+add  
+sub  
+mul  
+and  
+or  
+xor  
+not  
+buffer  
+inc  
+dec  
+rshift  
+lshift  
 
-equ
-less
-gret
+equ  
+less  
+gret  
 
-jmp l
-ifjmp l
+jmp l  
+ifjmp l  
 
-call f
-ret
+call f  
+ret  
 
-pushvar a
-popvar a
+pushvar a  
+popvar a  
