@@ -135,14 +135,9 @@ class NVM {
         this.#regi[0]++;
         return this;
     }
-    runallshow() { // 最後まで命令を実行する(最大100000)
-        let cnt = 0;
-        while (cnt<100000&&!this.endRunning()) {cnt++;console.log(this.getRegi(),this.getData().slice());this.next();}
-        return this;
-    }
     runall() { // 最後まで命令を実行する(最大100000)
         let cnt = 0;
-        while (cnt<100000&&!this.endRunning()) {cnt++;this.next();}
+        while (cnt<100000&&!this.endRunning()) {cnt++;debuglog(this.getRegi(),this.getData().slice());this.next();}
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
@@ -229,7 +224,7 @@ class NLPC {
         let vars = [];
 
         let spa = sp.indexOf("=>");
-        console.log(spa,sp);
+        debuglog(spa,sp);
         if (!(spa==sp.length-2||spa==-1)) {
             console.error("error");
         }
@@ -257,9 +252,9 @@ class NLPC {
             }
         }
 
-        console.log(vars);
+        debuglog(vars);
         this.add("ssp",vars.length);
-        console.log(cr)
+        debuglog(cr)
         for (let i=0;i<cr.length;i++) {
             switch (cr[i][0]) {
                 case 0:
@@ -292,6 +287,16 @@ class NLPC {
     }
 }
 
+{
+    let debug = false;
+    if (debug) {
+        var debuglog = console.log;
+    }
+    else {
+        var debuglog = function() {};
+    }
+}
+
 let code
 code = `
 goto main
@@ -321,10 +326,11 @@ prog = `15 8 mul`;
 code = new NLPC(prog).make();
 
 console.log("");
+console.log("---- code ----");
 console.log(code.prog);
 console.log("");
 
-console.log("");
+console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
 
@@ -333,8 +339,10 @@ runtime = new NVM(code.asm);
 
 runtime.runall();
 
-console.log("");
-console.log(runtime.getBinOut());
-console.log("");
+debuglog("");
+console.log("---- output ----");
+console.log("binary:");
+console.log(runtime.getBinOut().join(" "));
+console.log("string:");
 console.log(runtime.getOut());
 console.log("");
