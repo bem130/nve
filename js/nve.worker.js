@@ -19,139 +19,106 @@ class NVM {
         this.#ostr = new Int32Array(1024); // 標準出力
         this.#ispt = 0; // 標準入力ポインタ
         this.#ospt = 0; // 標準出力ポインタ
-        this.#regi = [0,0,0,0,0]; // i p x a b
+        this.#regi = [0,0]; // i sp
         this.display = new Display(640,480);
+    }
+    push(x) {
+        this.#memr[this.#regi[1]] = x;
+        this.#regi[1]++;
+    }
+    pop() {
+        this.#regi[1]--;
+        let r = this.#memr[this.#regi[1]];
+        this.#memr[this.#regi[1]] = 0;
+        return r;
     }
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
         switch (this.#prog[this.#regi[0]]) {
-            case 0: // get
-                this.#regi[2] = this.#istr[this.#ispt];
+            case 0: // push n
+                this.push(this.#imme[this.#regi[0]]);
+            break;
+            case 1: // pop
+                this.pop();
+            break;
+            case 2: // get
+                this.push(this.#istr[this.#ispt]);
                 this.#ispt++;
             break;
-            case 1: // outx
-                this.#ostr[this.#ospt] = this.#regi[2];
-                this.#ospt++;
-            break;
-            case 2: // outm
-                this.#ostr[this.#ospt] = this.#memr[this.#regi[1]];
+            case 3: // out
+                this.#ostr[this.#ospt] = this.pop();
                 this.#ospt++;
             break;
 
-            case 3: // equal
-                this.#regi[2] = this.#regi[3]==this.#regi[4];
+            case 4: // add
+                this.push(this.pop()+this.pop());
             break;
-            case 4: // less
-                this.#regi[2] = this.#regi[3]<this.#regi[4];
+            case 5: // sub
+                this.push(-this.pop()+this.pop());
             break;
-            case 5: // greater
-                this.#regi[2] = this.#regi[3]>this.#regi[4];
+            case 6: // mul
+                this.push(this.pop()*this.pop());
             break;
-            case 6: // eqgoto
-                if (this.#regi[2]==0) {
-                    this.#regi[0] = this.#imme[this.#regi[0]];
-                    this.#regi[0]--;
-                }
+            case 7: // and
+                this.push(Boolean(this.pop())&&Boolean(this.pop()));
             break;
-            case 7: // uneqgoto
-                if (this.#regi[2]!=0) {
-                    this.#regi[0] = this.#imme[this.#regi[0]];
-                    this.#regi[0]--;
-                }
+            case 8: // or
+                this.push(Boolean(this.pop())||Boolean(this.pop()));
             break;
-            case 8: // goto
+            case 9: // xor
+                this.push(Boolean(this.pop())^Boolean(this.pop()));
+            break;
+            case 10: // not
+                this.push(!Boolean(this.pop()))
+            break;
+            case 11: // buffer
+                this.push(Boolean(this.pop()))
+            break;
+
+            case 12: // inc
+                this.push(this.pop()+1);
+            break;
+            case 13: // dec
+                this.push(this.pop()-1);
+            break;
+
+            case 14: // rshift
+                this.push(this.pop()>>1);
+            break;
+            case 15: // lshift
+                this.push(this.pop()<<1);
+            break;
+
+            case 16: // equal
+                this.push(this.pop()==this.pop());
+            break;
+            case 17: // less
+                this.push(this.pop()<this.pop());
+            break;
+            case 18: // greater
+                this.push(this.pop()>this.pop());
+            break;
+            case 19: // jmp
                 this.#regi[0] = this.#imme[this.#regi[0]];
                 this.#regi[0]--;
             break;
-
-            case 9: // movpx
-                this.#regi[1] = this.#regi[2];
-            break;
-            case 10: // movpi
-                this.#regi[1] = this.#imme[this.#regi[0]];
-            break;
-            case 11: // movmx
-                this.#memr[this.#regi[1]] = this.#regi[2];
-            break;
-            case 12: // movmb
-                this.#memr[this.#regi[1]] = this.#regi[4];
-            break;
-            case 13: // movmi
-                this.#memr[this.#regi[1]] = this.#imme[this.#regi[0]];
+            case 20: // ifjmp
+                if (this.pop()==0) {
+                    this.#regi[0] = this.#imme[this.#regi[0]];
+                    this.#regi[0]--;
+                }
             break;
 
-            case 14: // movam
-                this.#regi[3] = this.#memr[this.#regi[1]];
-            break;
-            case 15: // movbm
-                this.#regi[4] = this.#memr[this.#regi[1]];
-            break;
-            case 16: // movxm
-                this.#regi[2] = this.#memr[this.#regi[1]];
-            break;
-            case 17: // movai
-                this.#regi[3] = this.#imme[this.#regi[0]];
-            break;
-            case 18: // movbi
-                this.#regi[4] = this.#imme[this.#regi[0]];
-            break;
-            case 19: // movxi
-                this.#regi[2] = this.#imme[this.#regi[0]];
-            break;
-            case 20: // movax
-                this.#regi[3] = this.#regi[2];
-            break;
-            case 21: // movbx
-                this.#regi[4] = this.#regi[2];
-            break;
-
-            case 22: // add
-                this.#regi[2] = this.#regi[3]+this.#regi[4];
-            break;
-            case 23: // sub
-                this.#regi[2] = this.#regi[3]-this.#regi[4];
-            break;
-            case 24: // mul
-                this.#regi[2] = this.#regi[3]*this.#regi[4];
-            break;
-
-            case 25: // and
-                this.#regi[2] = Boolean(this.#regi[3])&&Boolean(this.#regi[4]);
-            break;
-            case 26: // or
-            this.#regi[2] = Boolean(this.#regi[3])||Boolean(this.#regi[4]);
-            break;
-            case 27: // xor
-            this.#regi[2] = Boolean(this.#regi[3])^Boolean(this.#regi[4]);
-            break;
-            case 28: // not
-            this.#regi[2] = !Boolean(this.#regi[3]);
-            break;
-
-            case 29: // inc
-                this.#regi[2] = this.#regi[3]+1;
-            break;
-            case 30: // dec
-                this.#regi[2] = this.#regi[3]-1;
-            break;
-
-            case 31: // rshift
-                this.#regi[2] = this.#regi[3]>>1;
-            break;
-            case 32: // lshift
-                this.#regi[2] = this.#regi[3]<<1;
-            break;
-            case 33: // outdisp
-                postMessage(["display",this.display]);
-            break;
-            case 34: // dotx
-                this.display.set(this.#imme[this.#regi[0]],this.#regi[2]);
-            break;
 
             default:
             break;
         }
         this.#regi[0]++;
+        return this;
+    }
+    runallshow() { // 最後まで命令を実行する(最大100000)
+        let cnt = 0;
+        while (cnt<100000&&!this.endRunning()) {cnt++;console.log(this.getRegi(),this.getData().slice());this.next();}
         return this;
     }
     runall() { // 最後まで命令を実行する(最大100000)
@@ -162,7 +129,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["get","outx","outm","equal","less","greater","eqgoto","uneqgoto","goto","movpx","movpi","movmx","movmb","movmi","movam","movbm","movxm","movai","movbi","movxi","movax","movbx","add","sub","mul","and","or","xor","not","inc","dec","rshift","lshift","outdisp","dotx"];
+        let ins = ["push","pop","get","out","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","popr","fram"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -234,85 +201,33 @@ class NLPC {
 
         let code = this.prog;
         let sp = code.split(" ");
-        console.log(sp);
 
         let cr = [];
+        let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
+        let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
         for (let i=0;i<sp.length;i++) {
-            if (["+","-","*"].indexOf(sp[i])!=-1) {
-                cr.push([2,sp[i]]);
+            if (oprs.indexOf(sp[i])!=-1) {
+                cr.push([1,sp[i]]);
             }
             else if (parseInt(sp[i])!=NaN) {
                 cr.push([0,parseInt(sp[i])]);
             }
         }
-        console.log(cr);
 
-        this.add("label","0prepare");
-        { // for stack
-            this.add("movpi",this.sptr);
-            this.add("movxi",this.sstack);
-            this.add("movmx");
-        }
         this.add("label","main");
         for (let i=0;i<cr.length;i++) {
             switch (cr[i][0]) {
                 case 0:
-                    this.push(cr[i][1]);
+                    this.add("push",cr[i][1]);
                 break;
-                case 2:
-                    this.pop();
-                    this.add("movbx");
-                    this.pop();
-                    this.add("movax");
-                    this.add(["add","sub","mul"][["+","-","*"].indexOf(sp[i])]);
-                    this.pushx()
+                case 1:
+                    this.add(oprasms[oprs.indexOf(sp[i])]);
                 break;
             }
         }
-        this.pop();
-        this.add("outx");
+        this.add("out");
 
-        return this.asm;
-    }
-    pushx() {
-        this.add(";","push x");
-
-        this.add("movbx");
-        this.add("movpi",this.sptr);
-        this.add("movxm");
-        this.add("movpx");
-        this.add("movax");
-        this.add("dec");
-        this.add("movmb");
-        this.add("movpi",this.sptr);
-        this.add("movmx");
-
-        this.add(";","end push");
-    }
-    push(x) {
-        this.add(";","push "+x);
-        this.add("movpi",this.sptr);
-        this.add("movxm");
-        this.add("movpx");
-        this.add("movmi",x);
-        this.add("movax");
-        this.add("dec");
-        this.add("movpi",this.sptr);
-        this.add("movmx");
-        this.add(";","end push");
-    }
-    pop() {
-        this.add(";","pop");
-        this.add("movpi",this.sptr);
-        this.add("movxm");
-        this.add("movax");
-        this.add("inc");
-        this.add("movpi",this.sptr);
-        this.add("movmx");
-        this.add("movpx");
-        this.add("movxm");
-        this.add("movmi",0);
-        this.add(";","end pop");
+        return this;
     }
     add(ins,imme="") {
         imme = imme.toString();
@@ -354,11 +269,15 @@ disp:
     dotx 2
     outdisp
 `
-prog = `10 5 * 2 5 + -`;
+prog = `9 5 add 4 sub 5 buffer`;
 code = new NLPC(prog).make();
 
-console.log(code)
-runtime = new NVM(code);
+console.log(code.prog);
+console.log(code.asm)
+
+runtime = new NVM(code.asm);
+
+
 runtime.runall();
 
 console.log(runtime.getBinOut());

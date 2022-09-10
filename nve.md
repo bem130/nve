@@ -3,6 +3,8 @@
 
 push n
 pop
+get
+out
 
 add
 sub
@@ -11,12 +13,18 @@ and
 or
 xor
 not
+buffer
+inc
+dec
+rshift
+lshift
 
-gt
-lt
+equ
+less
+gret
 
-jump l
-eqjmp l
+jmp l
+ifjmp l
 
 call f
 ret
