@@ -208,7 +208,6 @@ class NLPC {
         this.prog = program;
     }
     make() {
-        // 1021 - 1023
         this.asm = "";
         this.sstack = 1020-1; // for stack
         this.sptr = 1020; // address of the ponter
