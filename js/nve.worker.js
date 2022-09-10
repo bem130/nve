@@ -27,9 +27,9 @@ class NVM {
         this.#regi[1]++;
     }
     pop() {
+        this.#memr[this.#regi[1]] = 0;
         this.#regi[1]--;
         let r = this.#memr[this.#regi[1]];
-        this.#memr[this.#regi[1]] = 0;
         return r;
     }
     next() { // 一つの命令を実行する
@@ -121,6 +121,13 @@ class NVM {
                 this.#regi[0] = this.pop();
             break;
 
+            case 24: // pushvar a
+                this.push(this.#memr[this.#imme[this.#regi[0]]]);
+            break;
+            case 25: // popvar
+                this.#memr[this.#imme[this.#regi[0]]] = this.pop();
+            break;
+
 
             default:
             break;
@@ -141,7 +148,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","popr","fram"];
+        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","pushvar","popvar"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -213,27 +220,53 @@ class NLPC {
 
         let code = this.prog;
         let sp = code.split(" ");
-
+        
         let cr = [];
         let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
         let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift"];
+        this.add("label","main");
+
+        let vars = [];
+
+        let spa = sp.indexOf("=");
+        console.log(spa,sp);
+        if (!(spa==sp.length-2||spa==-1)) {
+            console.error("error");
+        }
+        else if (spa==sp.length-2) {
+            if (vars.indexOf(sp[sp.length-1])==-1) {
+                vars.push(sp[sp.length-1]);
+            }
+        }
+        else if (spa==-1) {
+        }
+
         for (let i=0;i<sp.length;i++) {
-            if (oprs.indexOf(sp[i])!=-1) {
+            if (oprs.indexOf(sp[i])!=-1) { // 演算子
                 cr.push([1,sp[i]]);
             }
-            else if (parseInt(sp[i])!=NaN) {
+            else if (sp[i]=="=") { // 代入
+                cr.push([2,sp[i+1]]);
+                i++;
+            }
+            else if (parseInt(sp[i])!=NaN) { // 数字
                 cr.push([0,parseInt(sp[i])]);
             }
         }
 
-        this.add("label","main");
+        console.log(vars);
+        this.add("ssp",vars.length);
+        console.log(cr)
         for (let i=0;i<cr.length;i++) {
             switch (cr[i][0]) {
                 case 0:
                     this.add("push",cr[i][1]);
                 break;
                 case 1:
-                    this.add(oprasms[oprs.indexOf(sp[i])]);
+                    this.add(oprasms[oprs.indexOf(cr[i][1])]);
+                break;
+                case 2:
+                    this.add("popvar",vars.indexOf(cr[i][1]));
                 break;
             }
         }
@@ -281,7 +314,7 @@ disp:
     dotx 2
     outdisp
 `
-prog = `10 10 +`;
+prog = `10 50 + = n1`;
 code = new NLPC(prog).make();
 
 console.log(code.prog);
@@ -290,7 +323,7 @@ console.log(code.asm)
 runtime = new NVM(code.asm);
 
 
-runtime.runall();
+runtime.runallshow();
 
 console.log(runtime.getBinOut());
 console.log(runtime.getOut());

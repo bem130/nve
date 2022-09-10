@@ -29,5 +29,6 @@ ifjmp l
 
 call f
 ret
-popr n
-fram n
+
+pushvar a
+popvar a
