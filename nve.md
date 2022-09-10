@@ -5,6 +5,7 @@ push n
 pop
 get
 out
+ssp n
 
 add
 sub

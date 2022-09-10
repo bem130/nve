@@ -49,64 +49,76 @@ class NVM {
                 this.#ostr[this.#ospt] = this.pop();
                 this.#ospt++;
             break;
+            case 4: // ssp
+                this.#regi[1] = this.#imme[this.#regi[0]];
+            break;
 
-            case 4: // add
+            case 5: // add
                 this.push(this.pop()+this.pop());
             break;
-            case 5: // sub
+            case 6: // sub
                 this.push(-this.pop()+this.pop());
             break;
-            case 6: // mul
+            case 7: // mul
                 this.push(this.pop()*this.pop());
             break;
-            case 7: // and
+            case 8: // and
                 this.push(Boolean(this.pop())&&Boolean(this.pop()));
             break;
-            case 8: // or
+            case 9: // or
                 this.push(Boolean(this.pop())||Boolean(this.pop()));
             break;
-            case 9: // xor
+            case 10: // xor
                 this.push(Boolean(this.pop())^Boolean(this.pop()));
             break;
-            case 10: // not
+            case 11: // not
                 this.push(!Boolean(this.pop()))
             break;
-            case 11: // buffer
+            case 12: // buffer
                 this.push(Boolean(this.pop()))
             break;
 
-            case 12: // inc
+            case 13: // inc
                 this.push(this.pop()+1);
             break;
-            case 13: // dec
+            case 14: // dec
                 this.push(this.pop()-1);
             break;
 
-            case 14: // rshift
+            case 15: // rshift
                 this.push(this.pop()>>1);
             break;
-            case 15: // lshift
+            case 16: // lshift
                 this.push(this.pop()<<1);
             break;
 
-            case 16: // equal
+            case 17: // equal
                 this.push(this.pop()==this.pop());
             break;
-            case 17: // less
+            case 18: // less
                 this.push(this.pop()<this.pop());
             break;
-            case 18: // greater
+            case 19: // greater
                 this.push(this.pop()>this.pop());
             break;
-            case 19: // jmp
+            case 20: // jmp
                 this.#regi[0] = this.#imme[this.#regi[0]];
                 this.#regi[0]--;
             break;
-            case 20: // ifjmp
+            case 21: // ifjmp
                 if (this.pop()==0) {
                     this.#regi[0] = this.#imme[this.#regi[0]];
                     this.#regi[0]--;
                 }
+            break;
+
+            case 22: // call
+                this.push(this.#regi[0]+1);
+                this.#regi[0] = this.#imme[this.#regi[0]];
+                this.#regi[0]--;
+            break;
+            case 23: // ret
+                this.#regi[0] = this.pop();
             break;
 
 
@@ -129,7 +141,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["push","pop","get","out","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","popr","fram"];
+        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","popr","fram"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -269,7 +281,7 @@ disp:
     dotx 2
     outdisp
 `
-prog = `9 5 add 4 sub 5 buffer`;
+prog = `10 10 +`;
 code = new NLPC(prog).make();
 
 console.log(code.prog);
