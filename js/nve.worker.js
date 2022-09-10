@@ -223,6 +223,10 @@ class NLPC {
 
         for (code of codes) {
 
+            if (code.indexOf(";")!=-1) {
+                code = code.slice(0,code.indexOf(";"));
+            }
+            console.log(code)
             let sp = code.split(" ");
             let spa = sp.indexOf("=>");
             debuglog(spa,sp);
@@ -248,6 +252,9 @@ class NLPC {
                 else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
                     cr.push([0,[["true","false"].indexOf(sp[i])]]);
                 }
+                else if (vars.indexOf(sp[i])!=-1) { // 変数
+                    cr.push([3,sp[i]]);
+                }
                 else if (parseInt(sp[i])!=NaN) { // 数字
                     cr.push([0,parseInt(sp[i])]);
                 }
@@ -267,6 +274,9 @@ class NLPC {
                 break;
                 case 2:
                     this.add("popvar",vars.indexOf(cr[i][1]));
+                break;
+                case 3:
+                    this.add("pushvar",vars.indexOf(cr[i][1]));
                 break;
             }
         }
@@ -299,9 +309,9 @@ class NLPC {
 }
 
 let code
-prog = `15 8 mul out => n1
-8 8 = out => n3
-true true and out => n4`;
+prog = `15 8 mul => n1; 15*8をn1に格納
+8 8 + => n2;    8+8をn2に格納
+n1 n2 - out;    n1-n2を出力`;
 code = new NLPC(prog).make();
 
 console.log("");
