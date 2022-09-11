@@ -63,10 +63,10 @@ class NVM {
                 this.push(this.pop()*this.pop());
             break;
             case 8: // and
-                this.push(Boolean(this.pop())&&Boolean(this.pop()));
+                this.push(Boolean(this.pop())&Boolean(this.pop()));
             break;
             case 9: // or
-                this.push(Number(Boolean(this.pop())||Boolean(this.pop())));
+                this.push(Number(Boolean(this.pop())|Boolean(this.pop())));
             break;
             case 10: // xor
                 this.push(Number(Boolean(this.pop())^Boolean(this.pop())));
@@ -207,7 +207,7 @@ class NVM {
 
 
 {
-    let debug = false;
+    let debug = true;
     if (debug) {
         var debuglog = console.log;
     }
@@ -220,7 +220,7 @@ code = `ssp 2
 jmp #callmain
 
 main:
-    push 1
+    push 0
     push 1
     and
     out
@@ -232,7 +232,10 @@ ret56:
     out
     ret
 #callmain:
-    call main`;
+    call main
+    push 0
+    push 1
+    out`;
 runtime = new NVM(code);
 
 
