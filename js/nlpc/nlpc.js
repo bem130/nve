@@ -17,6 +17,7 @@ class NLPC {
         let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out","return"];
         let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
         for (let i=0;i<functions.length;i++) {
+
             if (oprs.indexOf(functions[i][0])!=-1) {
                 console.error("error");
                 continue;
@@ -27,42 +28,45 @@ class NLPC {
             }
 
             cr.push([5,functions[i][0]]);
-            let codes = functions[i][2].slice(0,functions[i][2].length-1).split(";");
-            for (let j=0;j<codes.length;j++) {
-                let code = codes[j];
-                let sp = code.split(" ");
-                let spa = sp.indexOf("=>");
-                if (!(spa==sp.length-2||spa==-1)) {
-                    console.error("assignment error");
-                }
-                else if (spa==-1) {
-                }
-                else if (spa==sp.length-2) {
-                    if (vars.indexOf(sp[sp.length-1])==-1&&oprs.indexOf(sp[sp.length-1])==-1) {
-                        vars.push(sp[sp.length-1]);
+            
+            for (let fcc=0;fcc<functions[i][2].length;fcc++) {
+                let codes = functions[i][2][fcc].slice(0,functions[i][2][fcc].length-1).split(";");
+                for (let j=0;j<codes.length;j++) {
+                    let code = codes[j];
+                    let sp = code.split(" ");
+                    let spa = sp.indexOf("=>");
+                    if (!(spa==sp.length-2||spa==-1)) {
+                        console.error("assignment error");
                     }
-                    // console.log(code,spa,sp)
-                }
-
-                for (let i=0;i<sp.length;i++) {
-                    if (oprs.indexOf(sp[i])!=-1) { // 演算子
-                        cr.push([1,sp[i]]);
+                    else if (spa==-1) {
                     }
-                    else if (sp[i]=="=>") { // 代入
-                        cr.push([2,sp[i+1]]);
-                        i++;
+                    else if (spa==sp.length-2) {
+                        if (vars.indexOf(sp[sp.length-1])==-1&&oprs.indexOf(sp[sp.length-1])==-1) {
+                            vars.push(sp[sp.length-1]);
+                        }
+                        // console.log(code,spa,sp)
                     }
-                    else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
-                        cr.push([0,[["true","false"].indexOf(sp[i])]]);
-                    }
-                    else if (sp[i][0]=="!") { // 関数呼び出し
-                        cr.push([6,sp[i].slice(1)]);
-                    }
-                    else if (vars.indexOf(sp[i])!=-1) { // 変数
-                        cr.push([3,sp[i]]);
-                    }
-                    else if (parseInt(sp[i])!=NaN) { // 数字
-                        cr.push([0,parseInt(sp[i])]);
+    
+                    for (let i=0;i<sp.length;i++) {
+                        if (oprs.indexOf(sp[i])!=-1) { // 演算子
+                            cr.push([1,sp[i]]);
+                        }
+                        else if (sp[i]=="=>") { // 代入
+                            cr.push([2,sp[i+1]]);
+                            i++;
+                        }
+                        else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
+                            cr.push([0,[["true","false"].indexOf(sp[i])]]);
+                        }
+                        else if (sp[i][0]=="!") { // 関数呼び出し
+                            cr.push([6,sp[i].slice(1)]);
+                        }
+                        else if (vars.indexOf(sp[i])!=-1) { // 変数
+                            cr.push([3,sp[i]]);
+                        }
+                        else if (parseInt(sp[i])!=NaN) { // 数字
+                            cr.push([0,parseInt(sp[i])]);
+                        }
                     }
                 }
             }
@@ -151,7 +155,7 @@ class NLPC {
                 }
                 child = child.slice(1,child.length-1);
                 if (funcname=="main") {itmain=true;}
-                functions.push([funcname,args,child]);
+                functions.push([funcname,args,[child]]);
             }
             cc++;
         }
