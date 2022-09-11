@@ -93,20 +93,20 @@ class NVM {
             break;
 
             case 17: // equal
-                this.push(this.pop()==this.pop());
+                this.push(Number(this.pop()==this.pop()));
             break;
             case 18: // less
-                this.push(this.pop()<this.pop());
+                this.push(Number(this.pop()<this.pop()));
             break;
             case 19: // greater
-                this.push(this.pop()>this.pop());
+                this.push(Number(this.pop()>this.pop()));
             break;
             case 20: // jmp
                 this.#regi[0] = this.#imme[this.#regi[0]];
                 this.#regi[0]--;
             break;
             case 21: // ifjmp
-                if (this.pop()!=0) {
+                if (this.pop()==0) {
                     this.#regi[0] = this.#imme[this.#regi[0]];
                     this.#regi[0]--;
                 }
@@ -216,26 +216,55 @@ class NVM {
     }
 }
 
-code = `ssp 2
+code = `ssp 3
 jmp #callmain
 
 main:
     push 0
-    push 1
-    and
-    out
+    popvar 0
+    push 2
+    popvar 1
+    push 6
+    popvar 2
+    call func
     ret
-ret56:
+func:
+    ; ifstart1
     pushvar 0
+    push 0
+    equ
+    ifjmp #ifend1
     pushvar 1
+    pushvar 2
     mul
     out
     ret
-#callmain:
-    call main
-    push 0
+#ifend1:
+    ; ifstart2
+    pushvar 0
     push 1
-    out`;
+    equ
+    ifjmp #ifend2
+    pushvar 1
+    pushvar 2
+    add
+    out
+    ret
+#ifend2:
+    ; ifstart3
+    pushvar 0
+    push 2
+    equ
+    ifjmp #ifend3
+    pushvar 1
+    pushvar 2
+    sub
+    out
+    ret
+#ifend3:
+    ret
+#callmain:
+    call main`;
 runtime = new NVM(code);
 
 

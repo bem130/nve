@@ -193,7 +193,9 @@ class NLPC {
     }
     if(ifobj) {
         this.objcnt["if"]++;
+        this.cr.push([";","ifstart"+this.objcnt["if"]]);
         this.block(ifobj.condition+";");
+        this.cr.push(["ifjmp","#ifend"+this.objcnt["if"]]);
         this.block(ifobj.then);
         this.cr.push([5,"#ifend"+this.objcnt["if"]]);
     }
@@ -276,18 +278,26 @@ class NLPC {
 let code
 prog = `
 !main(){
-    8 => n1;
+    0 => mode;
+    2 => n1;
     6 => n2;
-    !ret56;
+    !func;
     return;
 }
 
-!ret56(){
-    if(n1 0 =){
+!func(){
+    if(mode 0 =){
+        n1 n2 * out;
+        return;
+    }
+    if(mode 1 =){
         n1 n2 + out;
         return;
     }
-    n1 n2 * out;
+    if(mode 2 =){
+        n1 n2 - out;
+        return;
+    }
     return;
 }
 `;
