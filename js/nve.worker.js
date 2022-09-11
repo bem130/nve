@@ -207,7 +207,7 @@ class NVM {
 
 
 {
-    let debug = true;
+    let debug = false;
     if (debug) {
         var debuglog = console.log;
     }
