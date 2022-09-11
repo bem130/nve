@@ -29,14 +29,26 @@ NVEの為に練習で作っている雑な言語です
 ## コード例
 ```
 !main(){
-    8 => n1;
-    6 => n2;
-    !ret56;
+    0 => mode; モード設定
+    2 => n1; 引数1
+    6 => n2; 引数2
+    !func;
     return;
 }
 
-!ret56(){
-    n1 n2 * out;
+!func(){
+    if(mode 0 =){; モード0 掛け算
+        n1 n2 * out;
+        return;
+    }
+    if(mode 1 =){; モード1 足し算
+        n1 n2 + out;
+        return;
+    }
+    if(mode 2 =){; モード2 引き算
+        n1 n2 - out;
+        return;
+    }
     return;
 }
 ```
