@@ -40,41 +40,33 @@ class NLPC {
             else {
                 cc++;
                 let funcname = "";
-                while(fcode[cc]!="(") {
+                while(fcode[cc]!="(") { // 関数名
                     funcname += fcode[cc];cc++;
                 }
                 let brcnt = 1;
-                let cndit = "";
-                while(!(brcnt==0&&fcode[cc]==")")) {
+                let args = "";
+                while(!(brcnt==0&&fcode[cc]==")")) { // 引数
                     cc++;
                     if (fcode[cc]=="(") {brcnt++;}
                     else if (fcode[cc]==")") {brcnt--;}
-                    cndit+=fcode[cc];
+                    args+=fcode[cc];
                 }
-                cndit = cndit.slice(0,cndit.length-1);
+                args = args.slice(0,args.length-1);
                 brcnt = 0;
                 let child = "";
-                while(!(brcnt==0&&fcode[cc]=="}")) {
+                while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
                     cc++;
                     if (fcode[cc]=="{") {brcnt++;}
                     else if (fcode[cc]=="}") {brcnt--;}
                     child+=fcode[cc];
                 }
                 child = child.slice(1,child.length-1);
-                console.log("   ",funcname,"("+cndit+")","{"+child+"}");
+                console.log("   ",funcname,"("+args+")","{"+child+"}");
             }
             cc++;
         }
     }
     parse(tokens) {
-        console.log(fcode);
-        let smpl = [{
-            type:"function", name:"main", child:["15 8 mul => n1;","8 8 + => n2;",{type:"if",condition:["true"],then:["4 5 +"],else:[]},"n1 n2 - out;"],
-        }]
-        console.log(smpl);
-        var pattern = /! ?main ?\(/g;
-        var result = fcode.match(pattern);
-        console.log(result)
     }
     add(ins,imme="") {
         imme = imme.toString();
@@ -97,13 +89,10 @@ prog = `
 !main(){
     15 8 mul => n1; 15*8をn1に格納
     8 8 + => n2;    8+8をn2に格納
-    if (true) {
-        4 5 +;
-    }
     n1 n2 - out;    n1-n2を出力
 }
 
-!ret56(int int){
+!ret56(){
     7 8 * => ret;
     return ret;
 }
