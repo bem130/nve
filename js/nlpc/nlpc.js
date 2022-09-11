@@ -14,17 +14,17 @@ class NLPC {
             for (let func of funcs) {ret.push({name:func[0],child:func[2]});}
             return ret;
         }
-        console.log("functions:")
+        console.log("functions:");
         console.table(remakefunctable(functions));
 
-        let cr = [];
+        this.cr = [];
 
-        let vars = [];
-        let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out","return"];
-        let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
+        this.vars = [];
+        this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out","return"];
+        this.oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
         for (let i=0;i<functions.length;i++) {
 
-            if (oprs.indexOf(functions[i][0])!=-1) {
+            if (this.oprs.indexOf(functions[i][0])!=-1) {
                 console.error("error");
                 continue;
             }
@@ -33,82 +33,53 @@ class NLPC {
                 continue;
             }
 
-            cr.push([5,functions[i][0]]);
+            this.cr.push([5,functions[i][0]]);
             
             for (let fcc=0;fcc<functions[i][2].length;fcc++) {
-                let codes = functions[i][2][fcc].slice(0,functions[i][2][fcc].length-1).split(";");
-                for (let j=0;j<codes.length;j++) {
-                    let code = codes[j];
-                    let sp = code.split(" ");
-                    let spa = sp.indexOf("=>");
-                    if (!(spa==sp.length-2||spa==-1)) {
-                        console.error("assignment error");
-                    }
-                    else if (spa==-1) {
-                    }
-                    else if (spa==sp.length-2) {
-                        if (vars.indexOf(sp[sp.length-1])==-1&&oprs.indexOf(sp[sp.length-1])==-1) {
-                            vars.push(sp[sp.length-1]);
-                        }
-                        // console.log(code,spa,sp)
-                    }
-    
-                    for (let i=0;i<sp.length;i++) {
-                        if (oprs.indexOf(sp[i])!=-1) { // 演算子
-                            cr.push([1,sp[i]]);
-                        }
-                        else if (sp[i]=="=>") { // 代入
-                            cr.push([2,sp[i+1]]);
-                            i++;
-                        }
-                        else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
-                            cr.push([0,[["true","false"].indexOf(sp[i])]]);
-                        }
-                        else if (sp[i][0]=="!") { // 関数呼び出し
-                            cr.push([6,sp[i].slice(1)]);
-                        }
-                        else if (vars.indexOf(sp[i])!=-1) { // 変数
-                            cr.push([3,sp[i]]);
-                        }
-                        else if (parseInt(sp[i])!=NaN) { // 数字
-                            cr.push([0,parseInt(sp[i])]);
-                        }
-                    }
+
+                if (typeof functions[i][2][fcc] === 'object') {
+
                 }
+                else {
+                    this.block(functions[i][2][fcc]);
+
+                }
+
+
             }
 
         }
-        cr.push([5,"#callmain"]);
-        cr.push([6,"main"]);
+        this.cr.push([5,"#callmain"]);
+        this.cr.push([6,"main"]);
 
-        this.add("ssp",vars.length);
+        this.add("ssp",this.vars.length);
         this.add("jmp","#callmain");
         this.add("");
 
-        for (let i=0;i<cr.length;i++) {
-            switch (cr[i][0]) {
+        for (let i=0;i<this.cr.length;i++) {
+            switch (this.cr[i][0]) {
                 case 0:
-                    this.add("push",cr[i][1],1);
+                    this.add("push",this.cr[i][1],1);
                 break;
                 case 1:
-                    this.add(oprasms[oprs.indexOf(cr[i][1])],"",1);
+                    this.add(this.oprasms[this.oprs.indexOf(this.cr[i][1])],"",1);
                 break;
                 case 2:
-                    this.add("popvar",vars.indexOf(cr[i][1]),1);
+                    this.add("popvar",this.vars.indexOf(this.cr[i][1]),1);
                 break;
                 case 3:
-                    this.add("pushvar",vars.indexOf(cr[i][1]),1);
+                    this.add("pushvar",this.vars.indexOf(this.cr[i][1]),1);
                 break;
                 case 5:
-                    this.add("label",cr[i][1],0);
+                    this.add("label",this.cr[i][1],0);
                 break;
                 case 6:
-                    this.add("call",cr[i][1],1);
+                    this.add("call",this.cr[i][1],1);
                 break;
             }
         }
 
-        console.log("variables:",vars)
+        console.log("variables:",this.vars)
 
         return this;
     }
@@ -161,6 +132,7 @@ class NLPC {
                 }
                 child = child.slice(1,child.length-1);
                 if (funcname=="main") {itmain=true;}
+                this.parsechild(child);
                 functions.push([funcname,args,[child]]);
             }
             cc++;
@@ -168,7 +140,82 @@ class NLPC {
         if (!itmain) {console.error("there is not the main function");return [];}
         return functions;
     }
-    parse(tokens) {
+    block(blkcode) {
+        let codes = blkcode.slice(0,blkcode.length-1).split(";");
+        for (let j=0;j<codes.length;j++) {
+            let code = codes[j];
+            let sp = code.split(" ");
+            let spa = sp.indexOf("=>");
+            if (!(spa==sp.length-2||spa==-1)) {
+                console.error("assignment error");
+            }
+            else if (spa==-1) {
+            }
+            else if (spa==sp.length-2) {
+                if (this.vars.indexOf(sp[sp.length-1])==-1&&this.oprs.indexOf(sp[sp.length-1])==-1) {
+                    this.vars.push(sp[sp.length-1]);
+                }
+                // console.log(code,spa,sp)
+            }
+
+            for (let i=0;i<sp.length;i++) {
+                if (this.oprs.indexOf(sp[i])!=-1) { // 演算子
+                    this.cr.push([1,sp[i]]);
+                }
+                else if (sp[i]=="=>") { // 代入
+                    this.cr.push([2,sp[i+1]]);
+                    i++;
+                }
+                else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
+                    this.cr.push([0,[["true","false"].indexOf(sp[i])]]);
+                }
+                else if (sp[i][0]=="!") { // 関数呼び出し
+                    this.cr.push([6,sp[i].slice(1)]);
+                }
+                else if (this.vars.indexOf(sp[i])!=-1) { // 変数
+                    this.cr.push([3,sp[i]]);
+                }
+                else if (parseInt(sp[i])!=NaN) { // 数字
+                    this.cr.push([0,parseInt(sp[i])]);
+                }
+            }
+        }
+    }
+    parsechild(block) {
+        let blocks = [];
+        let fcode = block;
+        let cc = 0;
+        while (cc<fcode.length) {
+            if (fcode[cc]=="i") {
+                console.log("found the if statement");
+
+                cc++;
+                let funcname = "";
+                while(fcode[cc]!="(") { // 関数名
+                    funcname += fcode[cc];cc++;
+                }
+                let brcnt = 1;
+                let args = "";
+                while(!(brcnt==0&&fcode[cc]==")")) { // 引数
+                    cc++;
+                    if (fcode[cc]=="(") {brcnt++;}
+                    else if (fcode[cc]==")") {brcnt--;}
+                    args+=fcode[cc];
+                }
+                args = args.slice(0,args.length-1);
+                brcnt = 0;
+                let child = "";
+                while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
+                    cc++;
+                    if (fcode[cc]=="{") {brcnt++;}
+                    else if (fcode[cc]=="}") {brcnt--;}
+                    child+=fcode[cc];
+                }
+                child = child.slice(1,child.length-1);
+                blocks.push([child]);
+            }
+            cc++;
+        }
     }
     add(ins,imme="",indent=0) {
         imme = imme.toString();
@@ -198,6 +245,10 @@ prog = `
 }
 
 !ret56(){
+    if (n1==0) {
+        n1 n2 + out;
+        return;
+    }
     n1 n2 * out;
     return;
 }
