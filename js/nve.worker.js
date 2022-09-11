@@ -181,7 +181,7 @@ class NVM {
             if (tlss[i][0][tlss[i][0].length-1]==":") {continue;}
             if (ins.indexOf(tlss[i][0])==-1) {continue;}
             prog[ic] = ins.indexOf(tlss[i][0]);
-            if (["goto","eqgoto","uneqgoto"].indexOf(tlss[i][0])!=-1) {
+            if (["jmp","ifjmp","call"].indexOf(tlss[i][0])!=-1) {
                 imme[ic] = labeladr[tlss[i][1]];
             }
             else if (tlss[i].length>0) {
@@ -226,17 +226,20 @@ push 8
 push 8
 mul
 out
+jmp end
 ret56:
 push 7
 push 8
 mul
-out`;
+out
+end:`;
 runtime = new NVM(code);
 
 
 runtime.runall();
 
 debuglog("");
+console.log(runtime.getImme())
 console.log("---- output ----");
 console.log("binary:");
 console.log(runtime.getBinOut().join(" "));

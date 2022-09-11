@@ -28,7 +28,6 @@ class NLPC {
 
             cr.push([5,functions[i][0]]);
             for (code of functions[i][2].slice(0,functions[i][2].length-1).split(";")) {
-                console.log(code)
                 let sp = code.split(" ");
                 let spa = sp.indexOf("=>");
                 if (!(spa==sp.length-2||spa==-1)) {
@@ -63,7 +62,6 @@ class NLPC {
             }
 
         }
-        console.log(cr)
 
         this.add("ssp",vars.length);
         for (let i=0;i<cr.length;i++) {
@@ -85,7 +83,6 @@ class NLPC {
                 break;
             }
         }
-        console.log(this.asm)
 
         return this;
     }
@@ -170,13 +167,14 @@ prog = `
     7 8 * out;
 }
 `;
-code = new NLPC(prog).make();
-
 console.log("");
 console.log("---- code ----");
-console.log(code.prog);
-console.log("");
+console.log(prog);
 
+code = new NLPC(prog).make();
+
+
+console.log("");
 console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
