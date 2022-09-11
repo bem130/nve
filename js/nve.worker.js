@@ -19,7 +19,7 @@ class NVM {
         this.#ostr = new Int32Array(1024); // 標準出力
         this.#ispt = 0; // 標準入力ポインタ
         this.#ospt = 0; // 標準出力ポインタ
-        this.#regi = [0,0]; // i sp
+        this.#regi = [0,0,0]; // i sp fp
         this.display = new Display(640,480);
     }
     push(x) {
@@ -120,11 +120,13 @@ class NVM {
             case 23: // ret
                 this.#regi[0] = this.pop();
             break;
+            case 24: // fram m
+            break;
 
-            case 24: // pushvar a
+            case 25: // pushvar a
                 this.push(this.#memr[this.#imme[this.#regi[0]]]);
             break;
-            case 25: // popvar
+            case 26: // popvar
                 this.#memr[this.#imme[this.#regi[0]]] = this.pop();
             break;
 
@@ -143,7 +145,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","pushvar","popvar"];
+        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","fram","pushvar","popvar"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {

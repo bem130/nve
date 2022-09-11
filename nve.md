@@ -29,6 +29,7 @@ ifjmp l
 
 call f  
 ret  
+fram n  
 
 pushvar a  
 popvar a  
