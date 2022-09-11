@@ -214,9 +214,18 @@ class NVM {
     }
 }
 
-code = `main:
-ssp0
+code = `ssp 0
+main:
 push 15
+push 8
+mul
+out
+push 8
+push 8
+mul
+out
+ret56:
+push 7
 push 8
 mul
 out`;

@@ -7,11 +7,90 @@ class NLPC {
         this.sstack = 1020-1; // for stack
         this.sptr = 1020; // address of the ponter
 
-        this.tokenize(this.prog);
+        let functions = this.toplevel(this.prog);
+        console.table(functions);
+
+        let cr = [];
+
+        let vars = [];
+        let funcs = [];
+        let oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out"];
+        let oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out"];
+        for (let i=0;i<functions.length;i++) {
+            if (oprs.indexOf(functions[i][0])!=-1) {
+                console.error("error");
+                continue;
+            }
+            if (["0","1","2","3","4","5","6","7","8","9","#","$","&"].indexOf(functions[i][0][0])!=-1) {
+                console.log("function names must not start with numbers and symbols");
+                continue;
+            }
+
+            cr.push([5,functions[i][0]]);
+            for (code of functions[i][2].slice(0,functions[i][2].length-1).split(";")) {
+                console.log(code)
+                let sp = code.split(" ");
+                let spa = sp.indexOf("=>");
+                if (!(spa==sp.length-2||spa==-1)) {
+                    console.error("assignment error");
+                }
+                else if (spa==sp.length-2) {
+                    if (vars.indexOf(sp[sp.length-1])==-1) {
+                        vars.push(sp[sp.length-1]);
+                    }
+                }
+                else if (spa==-1) {
+                }
+
+                for (let i=0;i<sp.length;i++) {
+                    if (oprs.indexOf(sp[i])!=-1) { // 演算子
+                        cr.push([1,sp[i]]);
+                    }
+                    else if (sp[i]=="=>") { // 代入
+                        cr.push([2,sp[i+1]]);
+                        i++;
+                    }
+                    else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
+                        cr.push([0,[["true","false"].indexOf(sp[i])]]);
+                    }
+                    else if (vars.indexOf(sp[i])!=-1) { // 変数
+                        cr.push([3,sp[i]]);
+                    }
+                    else if (parseInt(sp[i])!=NaN) { // 数字
+                        cr.push([0,parseInt(sp[i])]);
+                    }
+                }
+            }
+
+        }
+        console.log(cr)
+
+        this.add("ssp",vars.length);
+        for (let i=0;i<cr.length;i++) {
+            switch (cr[i][0]) {
+                case 0:
+                    this.add("push",cr[i][1]);
+                break;
+                case 1:
+                    this.add(oprasms[oprs.indexOf(cr[i][1])]);
+                break;
+                case 2:
+                    this.add("popvar",vars.indexOf(cr[i][1]));
+                break;
+                case 3:
+                    this.add("pushvar",vars.indexOf(cr[i][1]));
+                break;
+                case 5:
+                    this.add("label",cr[i][1]);
+                break;
+            }
+        }
+        console.log(this.asm)
 
         return this;
     }
-    tokenize(program) {
+    toplevel(program) {
+        let functions = [];
         let codes = program.split("\n");
         let fcode = "";
         for (code of codes) {
@@ -28,10 +107,6 @@ class NLPC {
                 fcode+=code.replace(/{;/g,"{").replace(/};/g,"}");
             }
         }
-        console.log("");
-        console.log(fcode);
-        console.log("");
-        console.log("functions:");
         let cc = 0;
         while (cc<fcode.length) {
             if (fcode[cc]!="!") {
@@ -61,10 +136,11 @@ class NLPC {
                     child+=fcode[cc];
                 }
                 child = child.slice(1,child.length-1);
-                console.log("   ",funcname,"("+args+")","{"+child+"}");
+                functions.push([funcname,args,child]);
             }
             cc++;
         }
+        return functions;
     }
     parse(tokens) {
     }
@@ -85,18 +161,14 @@ class NLPC {
 
 let code
 prog = `
-
 !main(){
-    15 8 mul => n1; 15*8をn1に格納
-    8 8 + => n2;    8+8をn2に格納
-    n1 n2 - out;    n1-n2を出力
+    15 8 mul out;
+    8 8 * out;
 }
 
 !ret56(){
-    7 8 * => ret;
-    return ret;
+    7 8 * out;
 }
-
 `;
 code = new NLPC(prog).make();
 
