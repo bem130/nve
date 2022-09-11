@@ -113,7 +113,7 @@ class NVM {
             break;
 
             case 22: // call
-                this.push(this.#regi[0]+1);
+                this.push(this.#regi[0]);
                 this.#regi[0] = this.#imme[this.#regi[0]];
                 this.#regi[0]--;
             break;
@@ -207,7 +207,7 @@ class NVM {
 
 
 {
-    let debug = false;
+    let debug = true;
     if (debug) {
         var debuglog = console.log;
     }
@@ -216,30 +216,30 @@ class NVM {
     }
 }
 
-code = `ssp 0
+code = `ssp 2
+jmp #callmain
+
 main:
-push 15
-push 8
-mul
-out
-push 8
-push 8
-mul
-out
-jmp end
+    push 8
+    popvar 0
+    push 6
+    popvar 1
+    call ret56
+    ret
 ret56:
-push 7
-push 8
-mul
-out
-end:`;
+    pushvar 0
+    pushvar 1
+    mul
+    out
+    ret
+#callmain:
+    call main`;
 runtime = new NVM(code);
 
 
 runtime.runall();
 
 debuglog("");
-console.log(runtime.getImme())
 console.log("---- output ----");
 console.log("binary:");
 console.log(runtime.getBinOut().join(" "));
