@@ -8,8 +8,14 @@ class NLPC {
         this.sptr = 1020; // address of the ponter
 
         let functions = this.toplevel(this.prog);
+
+        let remakefunctable = function(funcs) {
+            let ret = [];
+            for (let func of funcs) {ret.push({name:func[0],child:func[2]});}
+            return ret;
+        }
         console.log("functions:")
-        console.table(functions);
+        console.table(remakefunctable(functions));
 
         let cr = [];
 
