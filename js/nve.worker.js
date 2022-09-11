@@ -63,19 +63,19 @@ class NVM {
                 this.push(this.pop()*this.pop());
             break;
             case 8: // and
-                this.push(Boolean(this.pop())||Boolean(this.pop()));
-            break;
-            case 9: // or
                 this.push(Boolean(this.pop())&&Boolean(this.pop()));
             break;
+            case 9: // or
+                this.push(Number(Boolean(this.pop())||Boolean(this.pop())));
+            break;
             case 10: // xor
-                this.push(!(Boolean(this.pop())^Boolean(this.pop())));
+                this.push(Number(Boolean(this.pop())^Boolean(this.pop())));
             break;
             case 11: // not
-                this.push(!Boolean(this.pop()))
+                this.push(Number(!Boolean(this.pop())))
             break;
             case 12: // buffer
-                this.push(Boolean(this.pop()))
+                this.push(Number(Boolean(this.pop())))
             break;
 
             case 13: // inc
@@ -106,7 +106,7 @@ class NVM {
                 this.#regi[0]--;
             break;
             case 21: // ifjmp
-                if (this.pop()==0) {
+                if (this.pop()!=0) {
                     this.#regi[0] = this.#imme[this.#regi[0]];
                     this.#regi[0]--;
                 }
@@ -220,11 +220,10 @@ code = `ssp 2
 jmp #callmain
 
 main:
-    push 8
-    popvar 0
-    push 6
-    popvar 1
-    call ret56
+    push 1
+    push 1
+    and
+    out
     ret
 ret56:
     pushvar 0
@@ -239,6 +238,8 @@ runtime = new NVM(code);
 
 runtime.runall();
 
+console.log("code:");
+console.log(runtime.getProg());
 debuglog("");
 console.log("---- output ----");
 console.log("binary:");

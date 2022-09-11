@@ -43,7 +43,7 @@ function show(disp) {
     }
     let co = document.getElementById("imgOut");
     co.height=y;co.width=x;co.getContext('2d').putImageData(new ImageData(iarr,x,y),0,0);
-    resizeImg(disp)
+    resizeImg(disp);
     window.onresize = function() {resizeImg(disp)}
 }
 

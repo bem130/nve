@@ -22,6 +22,8 @@ class NLPC {
         this.vars = [];
         this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out","return"];
         this.oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
+
+        this.objcnt = {"if":0};
         for (let i=0;i<functions.length;i++) {
 
             if (this.oprs.indexOf(functions[i][0])!=-1) {
@@ -38,7 +40,11 @@ class NLPC {
             for (let fcc=0;fcc<functions[i][2].length;fcc++) {
 
                 if (typeof functions[i][2][fcc] === 'object') {
-
+                    switch (functions[i][2][fcc].type) {
+                        case "if":
+                            this.if(functions[i][2][fcc]);
+                        break;
+                    }
                 }
                 else {
                     this.block(functions[i][2][fcc]);
@@ -75,6 +81,10 @@ class NLPC {
                 break;
                 case 6:
                     this.add("call",this.cr[i][1],1);
+                break;
+
+                default:
+                    this.add(this.cr[i][0],this.cr[i][1],1);
                 break;
             }
         }
@@ -132,8 +142,8 @@ class NLPC {
                 }
                 child = child.slice(1,child.length-1);
                 if (funcname=="main") {itmain=true;}
-                this.parsechild(child);
-                functions.push([funcname,args,[child]]);
+                child = this.parsechild(child,funcname);
+                functions.push([funcname,args,child]);
             }
             cc++;
         }
@@ -166,8 +176,8 @@ class NLPC {
                     this.cr.push([2,sp[i+1]]);
                     i++;
                 }
-                else if (["true","false"].indexOf(sp[i])!=-1) { // 論理値
-                    this.cr.push([0,[["true","false"].indexOf(sp[i])]]);
+                else if (["false","true"].indexOf(sp[i])!=-1) { // 論理値
+                    this.cr.push([0,[["false","true"].indexOf(sp[i])]]);
                 }
                 else if (sp[i][0]=="!") { // 関数呼び出し
                     this.cr.push([6,sp[i].slice(1)]);
@@ -181,41 +191,69 @@ class NLPC {
             }
         }
     }
-    parsechild(block) {
-        let blocks = [];
-        let fcode = block;
-        let cc = 0;
-        while (cc<fcode.length) {
-            if (fcode[cc]=="i") {
-                console.log("found the if statement");
+    if(ifobj) {
+        this.objcnt["if"]++;
+        this.block(ifobj.condition+";");
+        this.block(ifobj.then);
+        this.cr.push([5,"#ifend"+this.objcnt["if"]]);
+    }
+    parsechild(block,funcname="") {
+        let blocks = [block];
 
+        for (let i=0;i<blocks.length;i++) {
+            let fcode = blocks[i];
+            let cc = 0;
+            let child = [];
+            let coms = "";
+            while (cc<fcode.length) {
+                if (fcode[cc]=="i"&&fcode[cc+1]=="f") {
+                    if (coms.length>1) {
+                        child.push(coms);
+                        coms = "";
+                    }
+    
+                    cc+=2;
+                    let funcname = "";
+                    while(fcode[cc]!="(") { // 関数名
+                        funcname += fcode[cc];cc++;
+                    }
+                    let brcnt = 1;
+                    let condit = "";
+                    while(!(brcnt==0&&fcode[cc]==")")) { // 条件式
+                        cc++;
+                        if (fcode[cc]=="(") {brcnt++;}
+                        else if (fcode[cc]==")") {brcnt--;}
+                        condit+=fcode[cc];
+                    }
+                    condit = condit.slice(0,condit.length-1);
+                    brcnt = 0;
+                    let thens = "";
+                    while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
+                        cc++;
+                        if (fcode[cc]=="{") {brcnt++;}
+                        else if (fcode[cc]=="}") {brcnt--;}
+                        thens+=fcode[cc];
+                    }
+                    thens = thens.slice(1,thens.length-1);
+                    child.push({type:"if",condition:condit,then:thens,});
+                }
+                else {
+                    coms += fcode[cc];
+                }
                 cc++;
-                let funcname = "";
-                while(fcode[cc]!="(") { // 関数名
-                    funcname += fcode[cc];cc++;
-                }
-                let brcnt = 1;
-                let args = "";
-                while(!(brcnt==0&&fcode[cc]==")")) { // 引数
-                    cc++;
-                    if (fcode[cc]=="(") {brcnt++;}
-                    else if (fcode[cc]==")") {brcnt--;}
-                    args+=fcode[cc];
-                }
-                args = args.slice(0,args.length-1);
-                brcnt = 0;
-                let child = "";
-                while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
-                    cc++;
-                    if (fcode[cc]=="{") {brcnt++;}
-                    else if (fcode[cc]=="}") {brcnt--;}
-                    child+=fcode[cc];
-                }
-                child = child.slice(1,child.length-1);
-                blocks.push([child]);
             }
-            cc++;
+            if (coms.length>1) {
+                child.push(coms);
+                coms = "";
+            }
+            //console.log(child);
+            if (child.length>1) {
+                blocks = child;
+            }
         }
+        console.log(funcname,blocks)
+        console.log("")
+        return blocks;
     }
     add(ins,imme="",indent=0) {
         imme = imme.toString();
@@ -245,7 +283,7 @@ prog = `
 }
 
 !ret56(){
-    if (n1==0) {
+    if(n1 0 =){
         n1 n2 + out;
         return;
     }
