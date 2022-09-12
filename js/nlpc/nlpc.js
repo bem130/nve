@@ -17,6 +17,8 @@ class NLPC {
         console.log("functions:");
         console.table(remakefunctable(functions));
 
+        return this;
+
         this.cr = [];
 
         this.vars = [];
@@ -142,7 +144,7 @@ class NLPC {
                 }
                 child = child.slice(1,child.length-1);
                 if (funcname=="main") {itmain=true;}
-                child = this.parsechild(child,funcname);
+                child = this.parsechild([child],funcname);
                 functions.push([funcname,args,child]);
             }
             cc++;
@@ -199,16 +201,15 @@ class NLPC {
         this.block(ifobj.then);
         this.cr.push([5,"#ifend"+this.objcnt["if"]]);
     }
-    parsechild(block,funcname="") {
-        let blocks = [block];
+    parsechild(blocks,funcname="") {
 
+        let child = [];
         for (let i=0;i<blocks.length;i++) {
             let fcode = blocks[i];
             let cc = 0;
-            let child = [];
             let coms = "";
             while (cc<fcode.length) {
-                if (fcode[cc]=="i"&&fcode[cc+1]=="f") {
+                if (fcode[cc]=="i"&&fcode[cc+1]=="f") { // if文
                     if (coms.length>1) {
                         child.push(coms);
                         coms = "";
@@ -237,6 +238,7 @@ class NLPC {
                         thens+=fcode[cc];
                     }
                     thens = thens.slice(1,thens.length-1);
+                    thens = this.parsechild([thens]);
                     child.push({type:"if",condition:condit,then:thens,});
                 }
                 else {
@@ -248,14 +250,10 @@ class NLPC {
                 child.push(coms);
                 coms = "";
             }
-            //console.log(child);
-            if (child.length>1) {
-                blocks = child;
-            }
         }
-        console.log(funcname,blocks)
+        console.log(child)
         console.log("")
-        return blocks;
+        return child;
     }
     add(ins,imme="",indent=0) {
         imme = imme.toString();
@@ -287,6 +285,14 @@ prog = `
 
 !func(){
     if(mode 0 =){
+        if(mode n1 =){
+            6 out;
+        }
+        if(mode n1 =){
+            if(mode n1 =){
+                15 out;
+            }
+        }
         n1 n2 * out;
         return;
     }
