@@ -17,7 +17,6 @@ class NLPC {
         console.log("functions:");
         console.table(remakefunctable(functions));
 
-        return this;
 
         this.cr = [];
 
@@ -38,23 +37,8 @@ class NLPC {
             }
 
             this.cr.push([5,functions[i][0]]);
-            
-            for (let fcc=0;fcc<functions[i][2].length;fcc++) {
 
-                if (typeof functions[i][2][fcc] === 'object') {
-                    switch (functions[i][2][fcc].type) {
-                        case "if":
-                            this.if(functions[i][2][fcc]);
-                        break;
-                    }
-                }
-                else {
-                    this.block(functions[i][2][fcc]);
-
-                }
-
-
-            }
+            this.makechild(functions[i][2]);
 
         }
         this.cr.push([5,"#callmain"]);
@@ -64,29 +48,40 @@ class NLPC {
         this.add("jmp","#callmain");
         this.add("");
 
+        let indent = 0;
         for (let i=0;i<this.cr.length;i++) {
             switch (this.cr[i][0]) {
                 case 0:
-                    this.add("push",this.cr[i][1],1);
+                    this.add("push",this.cr[i][1],indent);
                 break;
                 case 1:
-                    this.add(this.oprasms[this.oprs.indexOf(this.cr[i][1])],"",1);
+                    this.add(this.oprasms[this.oprs.indexOf(this.cr[i][1])],"",indent);
                 break;
                 case 2:
-                    this.add("popvar",this.vars.indexOf(this.cr[i][1]),1);
+                    this.add("popvar",this.vars.indexOf(this.cr[i][1]),indent);
                 break;
                 case 3:
-                    this.add("pushvar",this.vars.indexOf(this.cr[i][1]),1);
+                    this.add("pushvar",this.vars.indexOf(this.cr[i][1]),indent);
                 break;
                 case 5:
-                    this.add("label",this.cr[i][1],0);
+                    indent = 0;
+                    this.add("label",this.cr[i][1],indent);
+                    indent++;
                 break;
                 case 6:
-                    this.add("call",this.cr[i][1],1);
+                    this.add("call",this.cr[i][1],indent);
+                break;
+                case 7:
+                    this.add(";",this.cr[i][1],indent);
+                    indent++;
+                break;
+                case 8:
+                    indent--;
+                    this.add("label",this.cr[i][1],indent);
                 break;
 
                 default:
-                    this.add(this.cr[i][0],this.cr[i][1],1);
+                    this.add(this.cr[i][0],this.cr[i][1],indent);
                 break;
             }
         }
@@ -193,13 +188,32 @@ class NLPC {
             }
         }
     }
+    makechild(block) {
+        
+        for (let fcc=0;fcc<block.length;fcc++) {
+
+            if (typeof block[fcc] === 'object') {
+                switch (block[fcc].type) {
+                    case "if":
+                        this.if(block[fcc]);
+                    break;
+                }
+            }
+            else {
+                this.block(block[fcc]);
+            }
+
+
+        }
+    }
     if(ifobj) {
         this.objcnt["if"]++;
-        this.cr.push([";","ifstart"+this.objcnt["if"]]);
+        let thisifn = this.objcnt["if"];
+        this.cr.push([7,"ifstart"+thisifn]);
         this.block(ifobj.condition+";");
-        this.cr.push(["ifjmp","#ifend"+this.objcnt["if"]]);
-        this.block(ifobj.then);
-        this.cr.push([5,"#ifend"+this.objcnt["if"]]);
+        this.cr.push(["ifjmp","#ifend"+thisifn]);
+        this.makechild(ifobj.then);
+        this.cr.push([8,"#ifend"+thisifn]);
     }
     parsechild(blocks,funcname="") {
 
@@ -257,12 +271,12 @@ class NLPC {
     }
     add(ins,imme="",indent=0) {
         imme = imme.toString();
+        for (let i=0;i<indent*4;i++) {
+            this.asm += " ";
+        }
         if (ins=="label") {
             this.asm += imme+":"+"\n";
             return;
-        }
-        for (let i=0;i<indent*4;i++) {
-            this.asm += " ";
         }
         if (imme.length>0) {
             this.asm += ins+" "+imme+"\n";
@@ -276,33 +290,28 @@ class NLPC {
 let code
 prog = `
 !main(){
-    0 => mode;
-    2 => n1;
-    6 => n2;
+    0 => test1;
+    0 => test2;
     !func;
     return;
 }
 
 !func(){
-    if(mode 0 =){
-        if(mode n1 =){
-            6 out;
+    if(test1 0 =){
+        if(test2 0 =){
+            1 out;
         }
-        if(mode n1 =){
-            if(mode n1 =){
-                15 out;
-            }
+        if(test2 1 =){
+            2 out;
         }
-        n1 n2 * out;
-        return;
     }
-    if(mode 1 =){
-        n1 n2 + out;
-        return;
-    }
-    if(mode 2 =){
-        n1 n2 - out;
-        return;
+    if(test1 1 =){
+        if(test2 0 =){
+            3 out;
+        }
+        if(test2 1 =){
+            4 out;
+        }
     }
     return;
 }
