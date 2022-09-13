@@ -113,6 +113,7 @@ class NVM {
             break;
 
             case 22: // call
+                this.#regi[2] = this.#regi[0];
                 this.push(this.#regi[0]);
                 this.#regi[0] = this.#imme[this.#regi[0]];
                 this.#regi[0]--;
@@ -128,6 +129,12 @@ class NVM {
             break;
             case 26: // popvar
                 this.#memr[this.#imme[this.#regi[0]]] = this.pop();
+            break;
+            case 27: // pushrel a
+                this.push(this.#memr[this.#regi[2]+this.#imme[this.#regi[0]]]);
+            break;
+            case 28: // poprel
+                this.#memr[this.#imme[this.#regi[2]+this.#regi[0]]] = this.pop();
             break;
 
 
