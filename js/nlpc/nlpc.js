@@ -194,6 +194,9 @@ class NLPC {
 
             if (typeof block[fcc] === 'object') {
                 switch (block[fcc].type) {
+                    case "block":
+                        this.makechild(block[fcc].child);
+                    break;
                     case "if":
                         this.if(block[fcc]);
                     break;
@@ -215,7 +218,7 @@ class NLPC {
         this.makechild(ifobj.then);
         this.cr.push([8,"#ifend"+thisifn]);
     }
-    parsechild(blocks,funcname="") {
+    parsechild(blocks) {
 
         let child = [];
         for (let i=0;i<blocks.length;i++) {
@@ -223,17 +226,31 @@ class NLPC {
             let cc = 0;
             let coms = "";
             while (cc<fcode.length) {
-                if (fcode[cc]=="i"&&fcode[cc+1]=="f") { // if文
+                if (fcode[cc]=="{") { // ブロック
+                    if (coms.length>1) {
+                        child.push(coms);
+                        coms = "";
+                    }
+
+                    let brcnt = 1;
+                    let conte = "";
+                    while(!(brcnt==0&&fcode[cc]=="}")) { // ブロックの中身
+                        cc++;
+                        if (fcode[cc]=="{") {brcnt++;}
+                        else if (fcode[cc]=="}") {brcnt--;}
+                        conte+=fcode[cc];
+                    }
+                    conte = conte.slice(0,conte.length-1);
+                    conte = this.parsechild([conte]);
+                    child.push({type:"block",child:conte,});
+                }
+                else if (fcode[cc]=="i"&&fcode[cc+1]=="f") { // if文
                     if (coms.length>1) {
                         child.push(coms);
                         coms = "";
                     }
     
                     cc+=2;
-                    let funcname = "";
-                    while(fcode[cc]!="(") { // 関数名
-                        funcname += fcode[cc];cc++;
-                    }
                     let brcnt = 1;
                     let condit = "";
                     while(!(brcnt==0&&fcode[cc]==")")) { // 条件式
@@ -245,7 +262,7 @@ class NLPC {
                     condit = condit.slice(0,condit.length-1);
                     brcnt = 0;
                     let thens = "";
-                    while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
+                    while(!(brcnt==0&&fcode[cc]=="}")) { // ifの中身
                         cc++;
                         if (fcode[cc]=="{") {brcnt++;}
                         else if (fcode[cc]=="}") {brcnt--;}
@@ -265,8 +282,8 @@ class NLPC {
                 coms = "";
             }
         }
-        console.log(child)
-        console.log("")
+        // console.log(child)
+        // console.log("")
         return child;
     }
     add(ins,imme="",indent=0) {
@@ -292,7 +309,9 @@ prog = `
 !main(){
     0 => test1;
     0 => test2;
-    !func;
+    {
+        !func;
+    }
     return;
 }
 
