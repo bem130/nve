@@ -336,6 +336,46 @@ class NLPC {
         // console.log("")
         return child;
     }
+    parseformula(fotokens,tokenstype) {
+        let res = [];
+        let roprs = [];
+        let precd = {
+            "^":[4,"r"],
+            "*":[3,"l"],
+            "*":[3,"l"],
+            "+":[2,"l"],
+            "-":[2,"l"],
+        }
+
+        for (let foc=0;foc<fotokens.length;foc++) {
+            let fo = fotokens[foc];
+            let tt = tokenstype[foc];
+            if (false) {}
+            else if (tt=="num") {
+                res.push(fo);
+            }
+            else if (tt=="opr") {
+                while (roprs.length>0) {
+                    let sto = roprs.pop();
+                    if (precd[sto][1]=="l"&&precd[sto][0]<=precd[fo][0]) {
+                        res.push(sto);
+                    }
+                    else {
+                        roprs.push(sto);
+                        break;
+                    }
+                }
+                roprs.push(fo);
+            }
+        }
+        while (roprs.length>0) {
+            let sto = roprs.pop();
+            res.push(sto);
+        }
+
+        return res;
+
+    }
     add(ins,imme="",indent=0) {
         imme = imme.toString();
         for (let i=0;i<indent*4;i++) {
@@ -380,3 +420,7 @@ console.log("");
 console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
+
+formu = [12,"+",10,"*",2];
+ttype = ["num","opr","num","opr","num"];
+console.log("result:",code.parseformula(formu,ttype));
