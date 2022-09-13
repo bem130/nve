@@ -21,10 +21,10 @@ class NLPC {
         this.cr = [];
 
         this.vars = [];
-        this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=","<",">","equ","less","gret","get","out","return"];
+        this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=",">","<","equ","less","gret","get","out","return"];
         this.oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
 
-        this.objcnt = {"if":0};
+        this.objcnt = {"if":0,"while":0,};
         for (let i=0;i<functions.length;i++) {
 
             if (this.oprs.indexOf(functions[i][0])!=-1) {
@@ -78,6 +78,10 @@ class NLPC {
                 case 8:
                     indent--;
                     this.add("label",this.cr[i][1],indent);
+                break;
+                case 9:
+                    this.add("label",this.cr[i][1],indent);
+                    indent++;
                 break;
 
                 default:
@@ -193,12 +197,16 @@ class NLPC {
         for (let fcc=0;fcc<block.length;fcc++) {
 
             if (typeof block[fcc] === 'object') {
+                console.log(block[fcc])
                 switch (block[fcc].type) {
                     case "block":
                         this.makechild(block[fcc].child);
                     break;
                     case "if":
-                        this.if(block[fcc]);
+                        this.ifstat(block[fcc]);
+                    break;
+                    case "while":
+                        this.whilestat(block[fcc]);
                     break;
                 }
             }
@@ -209,14 +217,25 @@ class NLPC {
 
         }
     }
-    if(ifobj) {
+    ifstat(ifobj) {
         this.objcnt["if"]++;
         let thisifn = this.objcnt["if"];
-        this.cr.push([7,"ifstart"+thisifn]);
+        this.cr.push([7,"ifbegan"+thisifn]);
         this.block(ifobj.condition+";");
         this.cr.push(["ifjmp","#ifend"+thisifn]);
         this.makechild(ifobj.then);
         this.cr.push([8,"#ifend"+thisifn]);
+    }
+    whilestat(whileobj) {
+        console.log("while")
+        this.objcnt["while"]++;
+        let thisifn = this.objcnt["while"];
+        this.cr.push([9,"#whilebegan"+thisifn]);
+        this.block(whileobj.condition+";");
+        this.cr.push(["ifjmp","#whileend"+thisifn]);
+        this.makechild(whileobj.then);
+        this.cr.push(["jmp","#whilebegan"+thisifn]);
+        this.cr.push([8,"#whileend"+thisifn]);
     }
     parsechild(blocks) {
 
@@ -244,12 +263,13 @@ class NLPC {
                     conte = this.parsechild([conte]);
                     child.push({type:"block",child:conte,});
                 }
-                else if (fcode[cc]=="i"&&fcode[cc+1]=="f") { // if文
+                else if (fcode.startsWith('if',cc)) { // if文
                     if (coms.length>1) {
                         child.push(coms);
                         coms = "";
                     }
     
+                    console.log("found the if statemet")
                     cc+=2;
                     let brcnt = 1;
                     let condit = "";
@@ -271,6 +291,36 @@ class NLPC {
                     thens = thens.slice(1,thens.length-1);
                     thens = this.parsechild([thens]);
                     child.push({type:"if",condition:condit,then:thens,});
+                }
+                else if (fcode.startsWith('while',cc)) { // while文
+                    if (coms.length>1) {
+                        child.push(coms);
+                        coms = "";
+                    }
+
+                    console.log("found the while statemet")
+    
+                    cc+=5;
+                    let brcnt = 1;
+                    let condit = "";
+                    while(!(brcnt==0&&fcode[cc]==")")) { // 条件式
+                        cc++;
+                        if (fcode[cc]=="(") {brcnt++;}
+                        else if (fcode[cc]==")") {brcnt--;}
+                        condit+=fcode[cc];
+                    }
+                    condit = condit.slice(0,condit.length-1);
+                    brcnt = 0;
+                    let thens = "";
+                    while(!(brcnt==0&&fcode[cc]=="}")) { // whileの中身
+                        cc++;
+                        if (fcode[cc]=="{") {brcnt++;}
+                        else if (fcode[cc]=="}") {brcnt--;}
+                        thens+=fcode[cc];
+                    }
+                    thens = thens.slice(1,thens.length-1);
+                    thens = this.parsechild([thens]);
+                    child.push({type:"while",condition:condit,then:thens,});
                 }
                 else {
                     coms += fcode[cc];
@@ -306,34 +356,16 @@ class NLPC {
 
 let code
 prog = `
+
 !main(){
     0 => test1;
-    0 => test2;
-    {
-        !func;
+    while(test1 3 <){
+        9 out;
+        test1 1 add => test1;
     }
     return;
 }
 
-!func(){
-    if(test1 0 =){
-        if(test2 0 =){
-            1 out;
-        }
-        if(test2 1 =){
-            2 out;
-        }
-    }
-    if(test1 1 =){
-        if(test2 0 =){
-            3 out;
-        }
-        if(test2 1 =){
-            4 out;
-        }
-    }
-    return;
-}
 `;
 console.log("");
 console.log("---- code ----");

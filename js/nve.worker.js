@@ -217,66 +217,28 @@ class NVM {
 }
 
 code = `
-
-ssp 2
+ssp 1
 jmp #callmain
 
 main:
     push 0
     popvar 0
-    push 0
-    popvar 1
-    call func
-    ret
-func:
-    ; ifstart1
+    #whilebegan1:
         pushvar 0
-        push 0
-        equ
-        ifjmp #ifend1
-        ; ifstart2
-            pushvar 1
-            push 0
-            equ
-            ifjmp #ifend2
-            push 1
-            out
-        #ifend2:
-        ; ifstart3
-            pushvar 1
-            push 1
-            equ
-            ifjmp #ifend3
-            push 2
-            out
-        #ifend3:
-    #ifend1:
-    ; ifstart4
+        push 3
+        gret
+        ifjmp #whileend1
+        push 9
+        out
         pushvar 0
         push 1
-        equ
-        ifjmp #ifend4
-        ; ifstart5
-            pushvar 1
-            push 0
-            equ
-            ifjmp #ifend5
-            push 3
-            out
-        #ifend5:
-        ; ifstart6
-            pushvar 1
-            push 1
-            equ
-            ifjmp #ifend6
-            push 4
-            out
-        #ifend6:
-    #ifend4:
+        add
+        popvar 0
+        jmp #whilebegan1
+    #whileend1:
     ret
 #callmain:
     call main
-
 `;
 runtime = new NVM(code);
 
