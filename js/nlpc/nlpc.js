@@ -347,6 +347,10 @@ class NLPC {
             "-":[2,"l"],
         }
 
+        if (fotokens.length!=tokenstype.length) {
+            console.error("it's length is not match")
+        }
+
         for (let foc=0;foc<fotokens.length;foc++) {
             let fo = fotokens[foc];
             let tt = tokenstype[foc];
@@ -357,7 +361,7 @@ class NLPC {
             else if (tt=="opr") {
                 while (roprs.length>0) {
                     let sto = roprs.pop();
-                    if (precd[sto][1]=="l"&&precd[sto][0]<=precd[fo][0]) {
+                    if ((precd[sto][1]=="l"&&precd[sto][0]>=precd[fo][0])||precd[sto][0]>precd[fo][0]) {
                         res.push(sto);
                     }
                     else {
@@ -421,6 +425,6 @@ console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
 
-formu = [12,"+",10,"*",2];
-ttype = ["num","opr","num","opr","num"];
+formu = [12,"+",10,"*",2,"^",2];
+ttype = ["num","opr","num","opr","num","opr","num"];
 console.log("result:",code.parseformula(formu,ttype));
