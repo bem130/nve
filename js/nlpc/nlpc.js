@@ -351,6 +351,7 @@ class NLPC {
             else if (fotxt[i]==")") {ft="brc"}
             else if (nums.indexOf(fotxt[i])!=-1) {ft="num"}
             else if (opr.indexOf(fotxt[i])!=-1) {ft="opr"}
+            else {ft="fun"}
             if (bft != ft && tmpa.length>0) {
                 formu.push(tmpa);
                 ttype.push(bft);
@@ -385,39 +386,50 @@ class NLPC {
         for (let foc=0;foc<fotokens.length;foc++) {
             let fo = fotokens[foc];
             let tt = tokenstype[foc];
+            //console.log(roprs)
             if (false) {}
             else if (tt=="num") {
                 res.push(fo);
             }
+            else if (tt=="fun") {
+                roprs.push([fo,"fun"]);
+            }
             else if (tt=="opr") {
                 while (roprs.length>0) {
                     let sto = roprs.pop();
-                    if (precd[sto]!=null&&((precd[sto][1]=="l"&&precd[sto][0]>=precd[fo][0])||precd[sto][0]>precd[fo][0])) {
-                        res.push(sto);
+                    if (precd[sto]!=null&&((precd[sto[0]][1]=="l"&&precd[sto[0]][0]>=precd[fo][0])||precd[sto[0]][0]>precd[fo][0])) {
+                        res.push(sto[0]);
                     }
                     else {
                         roprs.push(sto);
                         break;
                     }
                 }
-                roprs.push(fo);
+                roprs.push([fo,"opr"]);
             }
             else if (tt=="bro") {
-                roprs.push(fo);
+                roprs.push([fo,"bra"]);
             }
             else if (tt=="brc") {
                 while (roprs.length>0) {
                     let sto = roprs.pop();
-                    if (sto=="(") {
+                    if (sto[0]=="(") {
                         break;
                     }
-                    res.push(sto);
+                    res.push(sto[0]);
                 }
+                let tgs = roprs.pop();
+                if (tgs!=null&&tgs[1]=="fun") {
+                    res.push(tgs[0]);
+                }
+                else roprs.push(tgs);
             }
         }
         while (roprs.length>0) {
             let sto = roprs.pop();
-            res.push(sto);
+            if (sto!=null) {
+                res.push(sto[0]);
+            }
         }
 
         return res;
@@ -484,6 +496,11 @@ console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
 
 [formu,ttype] = code.parseformula("15+56*(1+5)");
+console.log(" ");
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+[formu,ttype] = code.parseformula("54+sin(12)*4");
 console.log(" ");
 console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
