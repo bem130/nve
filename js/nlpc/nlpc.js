@@ -483,7 +483,7 @@ console.log(formu);
 console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
 
-[formu,ttype] = code.parseformula("15+56");
+[formu,ttype] = code.parseformula("15+56*(1+5)");
 console.log(" ");
 console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
