@@ -235,12 +235,20 @@ main:
         push 3
         gret
         ifjmp #whileend1
-        push 9
+        push 65
         out
         pushvar 0
         push 1
         add
         popvar 0
+        ; ifbegan1
+            pushvar 0
+            push 1
+            equ
+            ifjmp #ifend1
+            push 78
+            out
+        #ifend1:
         jmp #whilebegan1
     #whileend1:
     ret

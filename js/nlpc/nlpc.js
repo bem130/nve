@@ -336,19 +336,50 @@ class NLPC {
         // console.log("")
         return child;
     }
-    parseformula(fotokens,tokenstype) {
+    parseformula(fotxt) {
+        console.log("input:",fotxt);
+        let formu = [];
+        let ttype = [];
+        let nums = ["0","1","2","3","4","5","6","7","8","9"];
+        let opr = ["^","*","+","-"];
+        let ft = "";
+        let tmpa = "";
+        for (let i=0;i<fotxt.length;i++) {
+            let bft = ft;
+            if (false){}
+            else if (fotxt[i]=="(") {ft="bro"}
+            else if (fotxt[i]==")") {ft="brc"}
+            else if (nums.indexOf(fotxt[i])!=-1) {ft="num"}
+            else if (opr.indexOf(fotxt[i])!=-1) {ft="opr"}
+            if (bft != ft && tmpa.length>0) {
+                formu.push(tmpa);
+                ttype.push(bft);
+                tmpa = "";
+            }
+            tmpa += fotxt[i];
+        }
+        if (tmpa.length>0) {
+            formu.push(tmpa);
+            ttype.push(ft);
+            tmpa = "";
+        }
+        for (let i=0;i<formu.length;i++) {
+            if (ttype[i]=="num") {
+                formu[i] = Number(formu[i]);
+            }
+        }
+        console.log("formu:",formu);
+        console.log("ttype:",ttype);
+        return [formu,ttype];
+    }
+    transformula(fotokens,tokenstype) {
         let res = [];
         let roprs = [];
         let precd = {
             "^":[4,"r"],
             "*":[3,"l"],
-            "*":[3,"l"],
             "+":[2,"l"],
             "-":[2,"l"],
-        }
-
-        if (fotokens.length!=tokenstype.length) {
-            console.error("it's length is not match")
         }
 
         for (let foc=0;foc<fotokens.length;foc++) {
@@ -361,7 +392,7 @@ class NLPC {
             else if (tt=="opr") {
                 while (roprs.length>0) {
                     let sto = roprs.pop();
-                    if ((precd[sto][1]=="l"&&precd[sto][0]>=precd[fo][0])||precd[sto][0]>precd[fo][0]) {
+                    if (precd[sto]!=null&&((precd[sto][1]=="l"&&precd[sto][0]>=precd[fo][0])||precd[sto][0]>precd[fo][0])) {
                         res.push(sto);
                     }
                     else {
@@ -370,6 +401,18 @@ class NLPC {
                     }
                 }
                 roprs.push(fo);
+            }
+            else if (tt=="bro") {
+                roprs.push(fo);
+            }
+            else if (tt=="brc") {
+                while (roprs.length>0) {
+                    let sto = roprs.pop();
+                    if (sto=="(") {
+                        break;
+                    }
+                    res.push(sto);
+                }
             }
         }
         while (roprs.length>0) {
@@ -404,8 +447,11 @@ prog = `
 !main(){
     0 => test1;
     while(test1 3 <){
-        9 out;
+        65 out;
         test1 1 add => test1;
+        if(test1 1 =){
+            78 out;
+        }
     }
     return;
 }
@@ -425,6 +471,19 @@ console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
 
-formu = [12,"+",10,"*",2,"^",2];
-ttype = ["num","opr","num","opr","num","opr","num"];
-console.log("result:",code.parseformula(formu,ttype));
+formu = [12,"+",10,"*",2];
+ttype = ["num","opr","num","opr","num"];
+console.log(formu);
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+formu = ["(",12,"+",10,")","*",2];
+ttype = ["bro","num","opr","num","brc","opr","num"];
+console.log(formu);
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+[formu,ttype] = code.parseformula("15+56");
+console.log(" ");
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
