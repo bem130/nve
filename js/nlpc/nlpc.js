@@ -347,11 +347,18 @@ class NLPC {
         for (let i=0;i<fotxt.length;i++) {
             let bft = ft;
             if (false){}
-            else if (fotxt[i]=="(") {ft="bro"}
-            else if (fotxt[i]==")") {ft="brc"}
-            else if (nums.indexOf(fotxt[i])!=-1) {ft="num"}
-            else if (opr.indexOf(fotxt[i])!=-1) {ft="opr"}
-            else {ft="fun"}
+            else if (fotxt[i]=="(") {ft="bro";}
+            else if (fotxt[i]==")") {ft="brc";}
+            else if (nums.indexOf(fotxt[i])!=-1) {ft="num";}
+            else if (opr.indexOf(fotxt[i])!=-1) {
+                ft="opr";
+                if (i==0) {
+                    if (fotxt[i]=="+"||fotxt[i]=="-") {
+                        ft="num";
+                    }
+                }
+            }
+            else {ft="fun";}
             if (bft != ft && tmpa.length>0) {
                 formu.push(tmpa);
                 ttype.push(bft);
@@ -501,6 +508,11 @@ console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
 
 [formu,ttype] = code.parseformula("54+sin(12)*4");
+console.log(" ");
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+[formu,ttype] = code.parseformula("-5+1");
 console.log(" ");
 console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
