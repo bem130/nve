@@ -338,6 +338,13 @@ class NLPC {
     }
     parseformula(fotxt) {
         console.log("input:",fotxt);
+        if (fotxt[0]=="+") {
+            fotxt = fotxt.slice(1);
+        }
+        else if (fotxt[0]=="-") {
+            fotxt = "0"+fotxt;
+        }
+        fotxt = fotxt.replace(/\(\+/,"(").replace(/\(\-/,"(0-");
         let formu = [];
         let ttype = [];
         let nums = ["0","1","2","3","4","5","6","7","8","9"];
@@ -350,14 +357,7 @@ class NLPC {
             else if (fotxt[i]=="(") {ft="bro";}
             else if (fotxt[i]==")") {ft="brc";}
             else if (nums.indexOf(fotxt[i])!=-1) {ft="num";}
-            else if (opr.indexOf(fotxt[i])!=-1) {
-                ft="opr";
-                if (i==0) {
-                    if (fotxt[i]=="+"||fotxt[i]=="-") {
-                        ft="num";
-                    }
-                }
-            }
+            else if (opr.indexOf(fotxt[i])!=-1) {ft="opr";}
             else {ft="fun";}
             if (bft != ft && tmpa.length>0) {
                 formu.push(tmpa);
@@ -513,6 +513,16 @@ console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
 
 [formu,ttype] = code.parseformula("-5+1");
+console.log(" ");
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+[formu,ttype] = code.parseformula("-(5+1)");
+console.log(" ");
+console.log("result:",code.transformula(formu,ttype));
+console.log(" ");
+
+[formu,ttype] = code.parseformula("1+(-1)");
 console.log(" ");
 console.log("result:",code.transformula(formu,ttype));
 console.log(" ");
