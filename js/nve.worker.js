@@ -1,13 +1,14 @@
 class Display {
     constructor(x,y) {
-        this.size = [x,y]
-        this.dpds = new Uint8ClampedArray(x*y*3).fill(255);
+        this.size = [x,y];
+        this.dpds = new Uint8ClampedArray(x*y*3).fill(0);
     }
     set(adr,c) {
         this.dpds[adr] = c;
         return this;
     }
 }
+
 class NVM {
     #prog;#imme;#memr;#istr;#ostr;#ispt;#ospt;#regi;#labeladr; // 宣言
     constructor(program,args=[0]) { // 初期化
@@ -20,7 +21,7 @@ class NVM {
         this.#ispt = 0; // 標準入力ポインタ
         this.#ospt = 0; // 標準出力ポインタ
         this.#regi = [0,0,0]; // i sp fp
-        this.display = new Display(640,480);
+        this.display = new Display(10,10);
     }
     push(x) {
         this.#memr[this.#regi[1]] = x;
@@ -125,16 +126,20 @@ class NVM {
             break;
 
             case 25: // pushvar a
-                this.push(this.#memr[this.#imme[this.#regi[0]]]);
+                this.push(this.#memr[this.pop()]);
             break;
             case 26: // popvar
-                this.#memr[this.#imme[this.#regi[0]]] = this.pop();
+                this.#memr[this.pop()] = this.pop();
             break;
-            case 27: // pushrel a
-                this.push(this.#memr[this.#regi[2]+this.#imme[this.#regi[0]]]);
+            case 27: // pushrel
+                this.push(this.#memr[this.pop()]);
             break;
             case 28: // poprel
-                this.#memr[this.#imme[this.#regi[2]+this.#regi[0]]] = this.pop();
+                this.#memr[this.pop()] = this.pop();
+            break;
+            case 29: // vmov
+                this.display.set(this.pop(),this.pop());
+                postmes(["display",this.display]);
             break;
 
 
@@ -152,7 +157,7 @@ class NVM {
     tbyte(program) { // テキストを数値の配列に変換する
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","fram","pushvar","popvar"];
+        let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","fram","pushvar","popvar","pushrel","poprel","vmov"];
         let lines = program.replace(/\r/,"").split("\n");
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
@@ -212,9 +217,11 @@ class NVM {
     getFunc() {return this.#labeladr}
 }
 
-
+function postmes(message) {
+    self.postMessage(message);
+}
 {
-    let debug = true;
+    let debug = false;
     if (debug) {
         var debuglog = console.log;
     }
@@ -228,30 +235,50 @@ ssp 1
 jmp #callmain
 
 main:
+    call video
+    ret
+video:
     push 0
-    popvar 0
+    push 0
+    popvar
     #whilebegan1:
-        pushvar 0
-        push 3
+        push 0
+        pushvar
+        push 80
         gret
         ifjmp #whileend1
-        push 65
-        out
-        pushvar 0
+        push 255
+        push 0
+        pushvar
+        push 3
+        mul
+        push 0
+        add
+        vmov
+        push 255
+        push 0
+        pushvar
+        push 3
+        mul
         push 1
         add
-        popvar 0
-        ; ifbegan1
-            pushvar 0
-            push 1
-            equ
-            ifjmp #ifend1
-            push 78
-            out
-        #ifend1:
+        vmov
+        push 255
+        push 0
+        pushvar
+        push 3
+        mul
+        push 2
+        add
+        vmov
+        push 0
+        pushvar
+        push 1
+        add
+        push 0
+        popvar
         jmp #whilebegan1
     #whileend1:
-    ret
 #callmain:
     call main
 `;

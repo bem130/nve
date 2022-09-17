@@ -21,8 +21,8 @@ class NLPC {
         this.cr = [];
 
         this.vars = [];
-        this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=",">","<","equ","less","gret","get","out","return"];
-        this.oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret"];
+        this.oprs = ["+","-","*","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","=",">","<","equ","less","gret","get","out","return","vmov"];
+        this.oprasms = ["add","sub","mul","add","sub","mul","and","or","xor","not","buffer","inc","dec","rshift","lshift","equ","less","gret","equ","less","gret","get","out","ret","vmov"];
 
         this.objcnt = {"if":0,"while":0,};
         for (let i=0;i<functions.length;i++) {
@@ -58,10 +58,12 @@ class NLPC {
                     this.add(this.oprasms[this.oprs.indexOf(this.cr[i][1])],"",indent);
                 break;
                 case 2:
-                    this.add("popvar",this.vars.indexOf(this.cr[i][1]),indent);
+                    this.add("push",this.vars.indexOf(this.cr[i][1]),indent);
+                    this.add("popvar","",indent);
                 break;
                 case 3:
-                    this.add("pushvar",this.vars.indexOf(this.cr[i][1]),indent);
+                    this.add("push",this.vars.indexOf(this.cr[i][1]),indent);
+                    this.add("pushvar","",indent);
                 break;
                 case 5:
                     indent = 0;
@@ -464,15 +466,17 @@ let code
 prog = `
 
 !main(){
-    0 => test1;
-    while(test1 3 <){
-        65 out;
-        test1 1 add => test1;
-        if(test1 1 =){
-            78 out;
-        }
-    }
+    !video
     return;
+}
+!video(){
+    0 => i;
+    while(i 80 <){
+        255 i 3 * 0 + vmov;
+        255 i 3 * 1 + vmov;
+        255 i 3 * 2 + vmov;
+        i 1 + => i;
+    }
 }
 
 `;
@@ -490,39 +494,39 @@ console.log("---- asm ----");
 console.log(code.asm);
 console.log("");
 
-formu = [12,"+",10,"*",2];
-ttype = ["num","opr","num","opr","num"];
-console.log(formu);
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// formu = [12,"+",10,"*",2];
+// ttype = ["num","opr","num","opr","num"];
+// console.log(formu);
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-formu = ["(",12,"+",10,")","*",2];
-ttype = ["bro","num","opr","num","brc","opr","num"];
-console.log(formu);
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// formu = ["(",12,"+",10,")","*",2];
+// ttype = ["bro","num","opr","num","brc","opr","num"];
+// console.log(formu);
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-[formu,ttype] = code.parseformula("15+56*(1+5)");
-console.log(" ");
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// [formu,ttype] = code.parseformula("15+56*(1+5)");
+// console.log(" ");
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-[formu,ttype] = code.parseformula("54+sin(12)*4");
-console.log(" ");
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// [formu,ttype] = code.parseformula("54+sin(12)*4");
+// console.log(" ");
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-[formu,ttype] = code.parseformula("-5+1");
-console.log(" ");
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// [formu,ttype] = code.parseformula("-5+1");
+// console.log(" ");
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-[formu,ttype] = code.parseformula("-(5+1)");
-console.log(" ");
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// [formu,ttype] = code.parseformula("-(5+1)");
+// console.log(" ");
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
 
-[formu,ttype] = code.parseformula("1+(-1)");
-console.log(" ");
-console.log("result:",code.transformula(formu,ttype));
-console.log(" ");
+// [formu,ttype] = code.parseformula("1+(-1)");
+// console.log(" ");
+// console.log("result:",code.transformula(formu,ttype));
+// console.log(" ");
