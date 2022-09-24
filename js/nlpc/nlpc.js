@@ -7,11 +7,20 @@ class NLPC {
         this.sstack = 1020-1; // for stack
         this.sptr = 1020; // address of the ponter
 
+        let functiondefs = this.topleveldefinition(this.prog);
+        let remakefuncdeftable = function(funcs) {
+            let ret = [];
+            for (let func of funcs) {ret.push({name:func[0],args:func[1]});}
+            return ret;
+        }
+
+        console.log("functions:");
+        console.table(remakefuncdeftable(functiondefs));
         let functions = this.toplevel(this.prog);
 
         let remakefunctable = function(funcs) {
             let ret = [];
-            for (let func of funcs) {ret.push({name:func[0],child:func[2]});}
+            for (let func of funcs) {ret.push({name:func[0],args:func[1],child:func[2]});}
             return ret;
         }
         console.log("functions:");
@@ -96,24 +105,64 @@ class NLPC {
 
         return this;
     }
-    toplevel(program) {
-        let functions = [];
+    topleveldefinition(program) {
+        let functionnames = [];
         let codes = program.split("\n");
         let fcode = "";
         let itmain = false;
         for (code of codes) {
             let spc = 0;
-            while (code[spc]==" ") {
-                spc++;
-            }
+            while (code[spc]==" ") {spc++;}
             code = code.slice(spc);
-            if (code.indexOf(";")!=-1) {
-                code = code.slice(0,code.indexOf(";"));
-            }
+            if (code.indexOf(";")!=-1) {code = code.slice(0,code.indexOf(";"));}
             code+=";";
-            if (code.length>1) {
-                fcode+=code.replace(/{;/g,"{").replace(/};/g,"}");
+            if (code.length>1) {fcode+=code.replace(/{;/g,"{").replace(/};/g,"}");}
+        }
+        let cc = 0;
+        while (cc<fcode.length) {
+            if (fcode[cc]!="!") {
+                console.log("can't define anything that isn't a function in the top-level");
             }
+            else {
+                cc++;
+                let funcname = "";
+                while(fcode[cc]!="(") { // 関数名
+                    funcname += fcode[cc];cc++;
+                }
+                let brcnt = 1;
+                let args = "";
+                while(!(brcnt==0&&fcode[cc]==")")) { // 引数
+                    cc++;
+                    if (fcode[cc]=="(") {brcnt++;}
+                    else if (fcode[cc]==")") {brcnt--;}
+                    args+=fcode[cc];
+                }
+                args = args.slice(0,args.length-1);
+                brcnt = 0;
+                while(!(brcnt==0&&fcode[cc]=="}")) { // 関数の中身
+                    cc++;
+                    if (fcode[cc]=="{") {brcnt++;}
+                    else if (fcode[cc]=="}") {brcnt--;}
+                }
+                if (funcname=="main") {itmain=true;}
+                functionnames.push([funcname,args]);
+            }
+            cc++;
+        }
+        if (!itmain) {console.error("there is not the main function");return [];}
+        return functionnames;
+    }
+    toplevel(program) {
+        let functions = [];
+        let codes = program.split("\n");
+        let fcode = "";
+        for (code of codes) {
+            let spc = 0;
+            while (code[spc]==" ") {spc++;}
+            code = code.slice(spc);
+            if (code.indexOf(";")!=-1) {code = code.slice(0,code.indexOf(";"));}
+            code+=";";
+            if (code.length>1) {fcode+=code.replace(/{;/g,"{").replace(/};/g,"}");}
         }
         let cc = 0;
         while (cc<fcode.length) {
@@ -144,20 +193,17 @@ class NLPC {
                     child+=fcode[cc];
                 }
                 child = child.slice(1,child.length-1);
-                if (funcname=="main") {itmain=true;}
                 child = this.parsechild([child],funcname);
                 functions.push([funcname,args,child]);
             }
             cc++;
         }
-        if (!itmain) {console.error("there is not the main function");return [];}
         return functions;
     }
     block(blkcode) {
-        console.log("block",blkcode)
         let codes = blkcode.slice(0,blkcode.length-1).split(";");
-        for (let j=0;j<codes.length;j++) {
-            let code = codes[j];
+        {
+            let code = blkcode;
             console.log("code",code)
             let sp = code.split(" ");
             let spa = sp.indexOf("=>");
@@ -343,8 +389,7 @@ class NLPC {
                     let tdformu = td[0]
                     let tdttype = td[1]
                     // console.log(" ");
-                    console.log("result:",td.join(" "));
-                    console.log("result:",[tdformu,tdttype].join(" "));
+                    console.log("result:",tdformu.join(" "));
                     // console.log(" ");
                     child.push(tdformu.join(" "));
                 }
@@ -423,13 +468,15 @@ class NLPC {
             "+":[3,"l"],
             "-":[3,"l"],
             "!=":[4,"l"],
-            "=>":[5,"r"],
         }
+        if (fotokens.indexOf("=>")!=-1) {
+            fotokens = fotokens.slice(0,fotokens.indexOf("=>"))
+        }
+        console.log("fotokens",fotokens)
 
         for (let foc=0;foc<fotokens.length;foc++) {
             let fo = fotokens[foc];
             let tt = tokenstype[foc];
-            //console.log(roprs)
             if (false) {}
             else if (tt=="num") {
                 res.push(fo);
@@ -451,7 +498,7 @@ class NLPC {
             else if (tt=="opr") {
                 while (roprs.length>0) {
                     let sto = roprs.pop();
-                    console.log(sto,fo);
+                    //console.log(sto,fo);
                     if (precd[sto[0]]!=null&&((precd[sto[0]][1]=="l"&&precd[sto[0]][0]>=precd[fo][0])||precd[sto[0]][0]>precd[fo][0])) {
                         res.push(sto[0]);
                         resty.push("opr");
