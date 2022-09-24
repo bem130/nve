@@ -50,6 +50,8 @@ class NLPC {
             this.makechild(functions[i][2]);
 
         }
+        { // 組み込み関数
+        }
         this.cr.push([5,"#callmain"]);
         this.cr.push([6,"main"]);
 
@@ -104,6 +106,14 @@ class NLPC {
         console.log("variables:",this.vars)
 
         return this;
+    }
+    intrinsicfunc() {
+        let intrinsicFunction = {
+            "vmov":function() {
+                this.cr.push([5,"vmov"]);
+            }
+        }
+        return intrinsicFunction;
     }
     topleveldefinition(program) {
         let functionnames = [];
@@ -201,9 +211,9 @@ class NLPC {
         return functions;
     }
     block(blkcode) {
-        let codes = blkcode.slice(0,blkcode.length-1).split(";");
+        let codes = blkcode.split(";")[0];
         {
-            let code = blkcode;
+            let code = codes;
             console.log("code",code)
             let sp = code.split(" ");
             let spa = sp.indexOf("=>");
@@ -379,18 +389,23 @@ class NLPC {
             }
             if (coms.length>1) {
                 let scoms = coms.split(";");
-                console.log("coms",coms)
+                //console.log("coms",coms)
                 for (let s=0;s<scoms.length;s++) {
-                    console.log(scoms[s])
+                    //console.log(scoms[s])
                     let [formu,ttype] = this.parseformula(scoms[s]);
-                    console.log("formu:",formu);
-                    console.log("ttype:",ttype);
+                    //console.log("formu:",formu);
+                    //console.log("ttype:",ttype);
                     let td = this.transformula(formu,ttype);
                     let tdformu = td[0]
                     let tdttype = td[1]
                     // console.log(" ");
-                    console.log("result:",tdformu.join(" "));
+                    //console.log("result:",tdformu.join(" "));
                     // console.log(" ");
+                    for (let j=0;j<tdformu.length;j++) {
+                        if (tdttype[j]=="fun") {
+                            tdformu[j] = "!"+tdformu[j];
+                        }
+                    }
                     child.push(tdformu.join(" "));
                 }
                 coms = "";
@@ -401,7 +416,7 @@ class NLPC {
         return child;
     }
     parseformula(fotxt) {
-        console.log("input:",fotxt);
+       // console.log("input:",fotxt);
         if (fotxt[0]=="+") {
             fotxt = fotxt.slice(1);
         }
@@ -416,6 +431,15 @@ class NLPC {
         let ft = "";
         let tmpa = "";
         let ptmpa = "";
+        let revtxt = function(text) {
+            text = text.split("");
+            let ret = [];
+            while (text.length>0) {
+                ret.push(text.pop());
+            }
+            return ret.join("");
+        }
+        fotxt = revtxt(fotxt);
         for (let i=0;i<fotxt.length;i++) {
             let bft = ft;
             ptmpa = fotxt[i];
@@ -426,9 +450,9 @@ class NLPC {
             else if (fotxt[i]==")") {ft="brc";}
             else if (nums.indexOf(fotxt[i])!=-1) {ft="num";}
             else {
-                ft="fun";
+                ft="var";
                 for(let oc=0;oc<opr.length;oc++) {
-                    if (fotxt.slice(i).startsWith(opr[oc])) {
+                    if (fotxt.slice(i).startsWith(revtxt(opr[oc]))) {
                         //console.log(opr[oc])
                         i+=opr[oc].length-1;
                         ft = "opr";
@@ -442,43 +466,61 @@ class NLPC {
                 tmpa = "";
             }
             //console.log(fotxt.slice(i))
-            tmpa += ptmpa;
+            tmpa = ptmpa+tmpa;
         }
         if (tmpa.length>0) {
             formu.push(tmpa);
             ttype.push(ft);
             tmpa = "";
         }
+       // console.log(formu)
         for (let i=0;i<formu.length;i++) {
             if (ttype[i]=="num") {
                 formu[i] = Number(formu[i]);
             }
+            if (ttype[i]=="bro"&&ttype[i+1]=="var") {
+                ttype[i+1] = "fun"
+            }
+        }
+        let rformu = []
+        let rttype = []
+        while (formu.length>0) {
+            rformu.push(formu.pop());
+            rttype.push(ttype.pop());
         }
         // console.log("formu:",formu);
         // console.log("ttype:",ttype);
-        return [formu,ttype];
+        return [rformu,rttype];
     }
     transformula(fotokens,tokenstype) {
         let res = [];
         let resty = [];
         let roprs = [];
         let precd = {
-            "^":[1,"r"],
-            "*":[2,"l"],
+            "^":[5,"r"],
+            "*":[4,"l"],
             "+":[3,"l"],
             "-":[3,"l"],
-            "!=":[4,"l"],
+            ">":[2,"l"],
+            "<":[2,"l"],
+            "!=":[1,"l"],
         }
+
+        let tokass = []
+        let typass = []
         if (fotokens.indexOf("=>")!=-1) {
+           // console.log("fotokens",fotokens)
+            tokass = fotokens.slice(fotokens.indexOf("=>"))
+            typass = ["opr","var"]
             fotokens = fotokens.slice(0,fotokens.indexOf("=>"))
         }
-        console.log("fotokens",fotokens)
+       // console.log("fotokens",fotokens)
 
         for (let foc=0;foc<fotokens.length;foc++) {
             let fo = fotokens[foc];
             let tt = tokenstype[foc];
             if (false) {}
-            else if (tt=="num") {
+            else if (tt=="num"||tt=="var") {
                 res.push(fo);
                 resty.push(tt);
             }
@@ -538,7 +580,10 @@ class NLPC {
             }
         }
 
-        console.log(res,resty)
+        //console.log("parsed",res,resty)
+        res = res.concat(tokass)
+        resty = resty.concat(typass)
+        //console.log("parsed",res,resty)
         return [res,resty];
 
     }
@@ -569,7 +614,7 @@ prog = `
 }
 !video(){
     0 => i;
-    while(i<80){
+    while(i 80 <){
         255 i 3 * 0 + vmov;
         255 i 3 * 1 + vmov;
         255 i 3 * 2 + vmov;
@@ -586,12 +631,23 @@ prog = `
 }
 !video(){
     0 => i;
-    while(i<80){
+    while(i 80 <){
         vmov(255,i*3+0);
         vmov(255,i*3+1);
         vmov(255,i*3+2);
         i+1 => i;
     }
+}
+
+`;
+prog = `
+
+!main(){
+    video();
+    return;
+}
+!video(){
+    15+5*3-1 => i;
 }
 
 `;
