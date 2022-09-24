@@ -255,7 +255,7 @@ class NLPC {
     }
     makechild(block) {
         
-        for (let fcc=0;fcc<block.length;fcc++) {
+        for (let fcc=0;fcc<block.length-1;fcc++) {
 
             if (typeof block[fcc] === 'object') {
                 // console.log(block[fcc])
@@ -643,11 +643,8 @@ prog = `
 prog = `
 
 !main(){
-    video();
+    4+5-5*5;
     return;
-}
-!video(){
-    15+5*3-1 => i;
 }
 
 `;
