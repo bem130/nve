@@ -282,6 +282,23 @@ video:
 #callmain:
     call main
 `;
+code = `
+ssp 0
+jmp #callmain
+
+main:
+    push 4
+    push 5
+    add
+    push 5
+    push 5
+    mul
+    sub
+    out
+    ret
+#callmain:
+    call main
+`
 runtime = new NVM(code);
 
 

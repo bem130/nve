@@ -14,8 +14,8 @@ class NLPC {
             return ret;
         }
 
-        console.log("functions:");
-        console.table(remakefuncdeftable(functiondefs));
+       // console.log("functions:");
+       // console.table(remakefuncdeftable(functiondefs));
         let functions = this.toplevel(this.prog);
 
         let remakefunctable = function(funcs) {
@@ -23,8 +23,8 @@ class NLPC {
             for (let func of funcs) {ret.push({name:func[0],args:func[1],child:func[2]});}
             return ret;
         }
-        console.log("functions:");
-        console.table(remakefunctable(functions));
+       // console.log("functions:");
+       // console.table(remakefunctable(functions));
 
 
         this.cr = [];
@@ -103,7 +103,7 @@ class NLPC {
             }
         }
 
-        console.log("variables:",this.vars)
+       // console.log("variables:",this.vars)
 
         return this;
     }
@@ -214,7 +214,7 @@ class NLPC {
         let codes = blkcode.split(";")[0];
         {
             let code = codes;
-            console.log("code",code)
+            // console.log("code",code)
             let sp = code.split(" ");
             let spa = sp.indexOf("=>");
             if (!(spa==sp.length-2||spa==-1)) {
