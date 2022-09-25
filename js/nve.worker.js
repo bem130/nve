@@ -47,7 +47,9 @@ class NVM {
                 this.#ispt++;
             break;
             case 3: // out
-                this.#ostr[this.#ospt] = this.pop();
+                let out = this.pop()
+                postmes(["putchar",out]);
+                this.#ostr[this.#ospt] = out;
                 this.#ospt++;
             break;
             case 4: // ssp

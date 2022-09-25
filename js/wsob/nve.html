@@ -5,17 +5,46 @@
     </head>
     <body>
         <div id="img_area">
-            <canvas id="imgOut" style="image-rendering: pixelated;"></canvas>
+            <canvas id="imgOut" style="image-rendering: pixelated;visibility: hidden;"></canvas>
+        </div>
+        <div id="terminal_area">
+            <pre id="textOut"></pre>
         </div>
     </body>
 </html>
-<script src="nve.worker.js"></script>
+<script src="../nve.worker.js"></script>
 <script>
+
+let displaymode = false;
 
 self.addEventListener("message", (e) => {
     switch (e.data[0]) {
+        case "displaymode":
+            displaymode = true;
+            document.getElementById("imgOut").style.visibility = "visible";
+            document.getElementById("textOut").style.visibility = "hidden";
+        break;
+        case "enddisplaymode":
+            displaymode = false;
+            document.getElementById("imgOut").style.visibility = "hidden";
+            document.getElementById("textOut").style.visibility = "visible";
+        break;
+        case "putchar":
+            if (displaymode) {
+                console.warn("it is not text-mode");
+            }
+            else {
+                console.log(e.data[1],(new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]])));
+                document.getElementById("textOut").innerText += (new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]]));
+            }
+        break;
         case "display":
-            show(e.data[1]);
+            if (displaymode) {
+                show(e.data[1]);
+            }
+            else {
+                console.warn("it is not display-mode");
+            }
         break;
         default:
             console.warn("no");
@@ -64,18 +93,20 @@ function resizeImg(draw) {
 };
 
 
-code = `
+let code = `
 ssp 0
 jmp #callmain
 
 main:
-    push 4
-    push 5
-    add
-    push 5
-    push 5
-    mul
-    sub
+    push 104
+    out
+    push 101
+    out
+    push 108
+    out
+    push 108
+    out
+    push 111
     out
     ret
 #callmain:
@@ -111,9 +142,10 @@ console.table({"prog":runtime.getProg(),"imme":runtime.getImme()});
         overflow: hidden;
         -ms-overflow-style: none;    /* IE, Edge 対応 */
         scrollbar-width: none;       /* Firefox 対応 */
-        background: rgb(0,0,0);
+        background: rgb(107, 93, 93);
         cursor: unset;
     }
+
     #img_area {
         top: 0;
         left: 0;
@@ -125,4 +157,13 @@ console.table({"prog":runtime.getProg(),"imme":runtime.getImme()});
         cursor: none;
     }
 
+    #terminal_area {
+        position: absolute;
+        top: 0;left: 0;
+        width: 100vw; height: 100vh;
+        background-color: black;
+        color: white;
+        font-family: monospace;
+        padding: 10px;
+    }
 </style>
