@@ -12,22 +12,6 @@
 <script src="nve.worker.js"></script>
 <script>
 
-
-// {
-
-//     const NveWorker = new Worker("nve.worker.js");
-//     NveWorker.addEventListener("message", (e) => {
-//         switch (e.data[0]) {
-//             case "display":
-//                 show(e.data[1]);
-//             break;
-//             default:
-//                 console.warn("no");
-//             break;
-//         }
-//     });
-
-// }
 self.addEventListener("message", (e) => {
     switch (e.data[0]) {
         case "display":
@@ -40,8 +24,8 @@ self.addEventListener("message", (e) => {
 });
 
 function show(disp) {
-    let x = disp.size[0]
-    let y = disp.size[1]
+    let x = disp.size[0];
+    let y = disp.size[1];
     let iarr = new Uint8ClampedArray(x*y*4).fill(255);
     for (let iy = 0; iy < y; iy++) {
         for (let ix = 0; ix < x; ix++) {
@@ -80,60 +64,6 @@ function resizeImg(draw) {
 };
 
 
-
-
-code = `
-ssp 1
-jmp #callmain
-
-main:
-    call video
-    ret
-video:
-    push 0
-    push 0
-    popvar
-    #whilebegan1:
-        push 0
-        pushvar
-        push 80
-        gret
-        ifjmp #whileend1
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 0
-        add
-        vmov
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 1
-        add
-        vmov
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 2
-        add
-        vmov
-        push 0
-        pushvar
-        push 1
-        add
-        push 0
-        popvar
-        jmp #whilebegan1
-    #whileend1:
-#callmain:
-    call main
-`;
 code = `
 ssp 0
 jmp #callmain
