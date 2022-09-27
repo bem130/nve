@@ -1,6 +1,9 @@
-class NEditor {
+class NCharInput {
     constructor() {
-        this.text = [""];
+        this.reset();
+    }
+    reset() {
+        this.text = "";
         this.cursor = 1;
     }
     setText(text) {}
@@ -21,44 +24,30 @@ class NEditor {
         }
         return false;
     }
-    selectText(text) {
-    }
 }
-class NEditorUI {
+class NCharUI {
     constructor(editorarea) {
-        this.editor = new NEditor();
         this.ui = editorarea;
-        this.beforekey = false;
-        this.nowkey = false;
-        this.startselect = 0;
-        this.initalui();
-    }
-    initalui() {
-        this.ui.classList.add("NEditor");
-        // edit area
-        this.editarea = document.createElement("div");
-        this.editarea.classList.add("editarea");
-        this.editarea.onclick = function() {this.addtextarea.focus()}.bind(this);
-        this.ui.appendChild(this.editarea);
-        // cursor
-        this.composingtext = document.createElement("span");
-        this.composingtext.classList.add("composing");
-        this.addtextarea = document.createElement("textarea");
-        this.addtextarea.classList.add("addtext");
-        //this.addtextarea.onchange = this.addtext.bind(this);
-        this.addtextarea.oninput = this.addtext.bind(this);
-        this.editarea.onkeydown = this.keyevent.bind(this);
-        // under bar
-        let infobar = document.createElement("div");
-        infobar.classList.add("infobar");
+        this.oninput = false;
+        this.editor = new NCharInput();
+        console.log(this.editor)
+        this.text = `Neknaj VE CUI console\n\n>`;
         {
-            // cursor info
-            this.infocursor = document.createElement("div");
-            this.infocursor.innerHTML = [this.editor.cursor,this.editor.cursor-1];
-            infobar.appendChild(this.infocursor);
+            this.ui.classList.add("NChar");
+            // edit area
+            this.display = document.createElement("div");
+            this.display.classList.add("display");
+            // cursor
+            this.composingtext = document.createElement("span");
+            this.composingtext.classList.add("composing");
+            this.addtextarea = document.createElement("textarea");
+            this.addtextarea.classList.add("addtext");
+            this.display.onclick = function() {this.addtextarea.focus()}.bind(this);
+            this.ui.appendChild(this.display);
+            this.addtextarea.oninput = this.addtext.bind(this);
+            this.addtextarea.onkeydown = this.keyevents.bind(this);
+            this.updatelines();
         }
-        this.ui.appendChild(infobar);
-        this.updatelines();
     }
     addtext(e) {
         if( e.isComposing ) {
@@ -68,14 +57,22 @@ class NEditorUI {
         }
         else {
             for (let i=0;i<e.target.value.length;i++) {
-                this.editor.addText(e.target.value[i]);
+                if (e.target.value[i]!="\n") {
+                    this.editor.addText(e.target.value[i]);
+                }
+                else {
+                    console.log("input:",this.editor.text);
+                    postmes(["inputed",this.editor.text]);
+                    this.editor.reset();
+                    this.oninput = false;
+                }
             }
             e.target.value = "";
             this.composingtext.innerText = "";
         }
         this.updatelines();
     }
-    keyevent(e) {
+    keyevents(e) {
         //console.log(e)
         this.nowkey = e;
 
@@ -90,18 +87,12 @@ class NEditorUI {
             }
         }
         if (e.keyCode==37) {
-            if ((this.beforekey.keyCode==16)&&e.shiftKey) {
-                this.startselect = this.editor.cursor;
-            }
             if (true) {
                 this.editor.moveCursor(-1);
             }
             this.updatelines();
         }
         if (e.keyCode==39) {
-            if ((this.beforekey.keyCode==16)&&e.shiftKey) {
-                this.startselect = this.editor.cursor;
-            }
             if (true) {
                 this.editor.moveCursor(1);
             }
@@ -112,59 +103,55 @@ class NEditorUI {
 
     }
     updatelines() {
-        let selecting = this.nowkey.shiftKey;
-        let startselection = Math.min(this.startselect,this.editor.cursor)-2;
-        let endselection = Math.max(this.startselect,this.editor.cursor)-1;
-        this.editarea.innerHTML = "";
-        let lines = document.createElement("div");
+        this.display.innerHTML = "";
+        let lines = document.createElement("span");
         let i = 0;
-        for (i=0;i<=this.editor.text.length;i++) {
-            if (i+1==this.editor.cursor) {
-                lines.appendChild(this.composingtext);
-                lines.appendChild(this.addtextarea);
-            }
-            if (this.editor.text[i]==null) {
+        for (i=0;i<=this.text.length;i++) {
+            if (this.text[i]==null) {
                 lines.classList.add("line");
-                this.editarea.appendChild(lines);
+                this.display.appendChild(lines);
             }
-            else if (this.editor.text[i]=="\n") {
+            else if (this.text[i]=="\n") {
                 lines.classList.add("line");
-                this.editarea.appendChild(lines);
-                lines = document.createElement("div");
+                this.display.appendChild(lines);
+                lines = document.createElement("span");
             }
             else {
                 let chars = document.createElement("span");
+                lines.classList.add("endline");
                 chars.classList.add("char");
-                chars.innerText = this.editor.text[i];
-                //console.log(selecting,startselection,endselection)
-                if (selecting&&startselection<i&&endselection>i) {
-                    chars.classList.add("selecting")
-                }
+                chars.innerText = this.text[i];
                 lines.appendChild(chars);
             }
         }
-        this.infocursor.innerText = this.editor.cursor;
-        this.addtextarea.focus();
-        //console.log("updated")
-    }
-    moveselector() {
-        let chars = document.querySelector(`.NEditor > div.editarea span:nth-child(${this.editor.cursor-1})`);
-        if (chars!=null) {
-            chars.after(this.addtextarea);
-            chars.after(this.composingtext);
-        }
-        else {
-            chars = document.querySelector(`.NEditor > div.editarea span:nth-child(${this.editor.cursor})`);
-            if (chars!=null) {
-                chars.before(this.addtextarea);
-                chars.before(this.composingtext);
+        for (let j=0;j<this.editor.text.length+1;j++) {
+            if (j+1==this.editor.cursor) {
+                lines.appendChild(this.composingtext);
+                lines.appendChild(this.addtextarea);
+            }
+            if (this.editor.text[j]==null) {
+                lines.classList.add("line");
+                this.display.appendChild(lines);
+            }
+            else if (this.editor.text[j]=="\n") {
+                lines.classList.add("line");
+                this.display.appendChild(lines);
+                lines = document.createElement("span");
             }
             else {
-                chars = document.querySelector(`.NEditor > div.editarea`);
-                chars.appendChild(this.addtextarea);
-                chars.appendChild(this.composingtext);
+                let chars = document.createElement("span");
+                lines.classList.add("endline");
+                chars.classList.add("char");
+                chars.innerText = this.editor.text[j];
+                lines.appendChild(chars);
             }
         }
+        this.addtextarea.focus();
     }
-    setui() {}
+    getinput() {
+        this.oninput = true;
+    }
+}
+function postmes(message) {
+    self.postMessage(message);
 }
