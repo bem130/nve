@@ -26,12 +26,12 @@ class NCharInput {
     }
 }
 class NCharUI {
-    constructor(editorarea) {
+    constructor(editorarea,text="") {
         this.ui = editorarea;
         this.oninput = false;
         this.editor = new NCharInput();
         console.log(this.editor)
-        this.text = `Neknaj VE CUI console\n\n>`;
+        this.text = text;
         {
             this.ui.classList.add("NChar");
             // edit area
@@ -62,7 +62,7 @@ class NCharUI {
                 }
                 else {
                     console.log("input:",this.editor.text);
-                    postmes(["inputed",this.editor.text]);
+                    self.postMessage(["inputed",this.editor.text]);
                     this.editor.reset();
                     this.oninput = false;
                 }
@@ -124,34 +124,37 @@ class NCharUI {
                 lines.appendChild(chars);
             }
         }
-        for (let j=0;j<this.editor.text.length+1;j++) {
-            if (j+1==this.editor.cursor) {
-                lines.appendChild(this.composingtext);
-                lines.appendChild(this.addtextarea);
+        if (this.oninput) {
+            for (let j=0;j<this.editor.text.length+1;j++) {
+                if (j+1==this.editor.cursor) {
+                    lines.appendChild(this.composingtext);
+                    lines.appendChild(this.addtextarea);
+                }
+                if (this.editor.text[j]==null) {
+                    lines.classList.add("line");
+                    this.display.appendChild(lines);
+                }
+                else if (this.editor.text[j]=="\n") {
+                    lines.classList.add("line");
+                    this.display.appendChild(lines);
+                    lines = document.createElement("span");
+                }
+                else {
+                    let chars = document.createElement("span");
+                    lines.classList.add("endline");
+                    chars.classList.add("char");
+                    chars.innerText = this.editor.text[j];
+                    lines.appendChild(chars);
+                }
             }
-            if (this.editor.text[j]==null) {
-                lines.classList.add("line");
-                this.display.appendChild(lines);
-            }
-            else if (this.editor.text[j]=="\n") {
-                lines.classList.add("line");
-                this.display.appendChild(lines);
-                lines = document.createElement("span");
-            }
-            else {
-                let chars = document.createElement("span");
-                lines.classList.add("endline");
-                chars.classList.add("char");
-                chars.innerText = this.editor.text[j];
-                lines.appendChild(chars);
-            }
+            this.addtextarea.focus();
         }
-        this.addtextarea.focus();
     }
-    getinput() {
-        this.oninput = true;
+    async getinput() {
+        self.addEventListener("message", (e) => {
+            if (e.data[0]!=null&&e.data[0]=="inputed") {
+                resolve(e.data[1]);
+            }
+        });
     }
-}
-function postmes(message) {
-    self.postMessage(message);
 }
