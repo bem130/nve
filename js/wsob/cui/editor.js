@@ -123,7 +123,7 @@ class NCharUI {
             }
             else {
                 let chars = document.createElement("span");
-                lines.classList.add("endline");
+                //lines.classList.add("endline");
                 chars.classList.add("char");
                 chars.innerText = this.text[i];
                 lines.appendChild(chars);
@@ -146,7 +146,6 @@ class NCharUI {
                 }
                 else {
                     let chars = document.createElement("span");
-                    lines.classList.add("endline");
                     chars.classList.add("char");
                     chars.innerText = this.editor.text[j];
                     lines.appendChild(chars);

@@ -2,18 +2,22 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <script src="./cui/editor.js"></script>
+        <link href="./cui/editor.css" rel="stylesheet">
     </head>
     <body>
         <div id="img_area">
             <canvas id="imgOut" style="image-rendering: pixelated;visibility: hidden;"></canvas>
         </div>
         <div id="terminal_area">
-            <pre id="textOut"></pre>
+            <div id="editor"></div>
         </div>
     </body>
 </html>
 <script src="../nve.worker.js"></script>
 <script>
+
+let editor = new NCharUI(document.getElementById("editor"),"Neknaj VE CUI console\n>\n");
 
 let displaymode = false;
 
@@ -35,7 +39,7 @@ self.addEventListener("message", (e) => {
             }
             else {
                 console.log(e.data[1],(new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]])));
-                document.getElementById("textOut").innerText += (new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]]));
+                editor.putchar((new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]])));
             }
         break;
         case "display":
