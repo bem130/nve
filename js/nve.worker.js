@@ -160,7 +160,8 @@ class NVM {
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
         let ins = ["push","pop","get","out","ssp","add","sub","mul","and","or","xor","not","bf","inc","dec","rshift","lshift","equ","less","gret","jmp","ifjmp","call","ret","fram","pushvar","popvar","pushrel","poprel","vmov"];
-        let lines = program.replace(/\r/,"").split("\n");
+        let lines = program.replace(/\r/g,"").split("\n");
+        console.log("lines",lines)
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
             let s;

@@ -92,43 +92,18 @@ function resizeImg(draw) {
     document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
 };
 
-
-let code = `
-ssp 0
-jmp #callmain
-
-main:
-    push 104
-    out
-    push 101
-    out
-    push 108
-    out
-    push 108
-    out
-    push 111
-    out
-    ret
-#callmain:
-    call main
-`
-runtime = new NVM(code);
-
-
-runtime.runall();
-
-console.log("code:");
-console.log(runtime.getProg());
-debuglog("");
-console.log("---- output ----");
-console.log("binary:");
-console.log(runtime.getBinOut().join(" "));
-console.log("string:");
-console.log(runtime.getOut());
-console.log("");
-
-
-console.table({"prog":runtime.getProg(),"imme":runtime.getImme()});
+let runtime;
+async function start(filename) {
+    const file = await fetch(`./prog/${filename}`, {
+        method: "GET",
+    });
+    const data = await file.text();
+    console.log(data)
+    runtime = new NVM(data);
+    runtime.runall();
+    console.log(runtime)
+}
+start("hello.nl")
 
 
 
