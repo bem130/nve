@@ -1,0 +1,66 @@
+.NEditor {
+    position: relative;
+    font-family: monospace;
+    font-size: 20px;
+    height: calc(100vh - 30px);
+    width: calc(100vw - 20px);
+    margin: 0px;
+    padding: 0px;
+    background-color: rgb(47, 51, 81);
+    color: aliceblue;
+}
+.NEditor .editarea {
+    padding: 30px;
+    height: 100%;
+    overflow: scroll;
+}
+.NEditor .editarea .line {
+    height: 30px;
+    text-align: left;
+    white-space: nowrap;
+    width: fit-content;
+}
+.NEditor .editarea .composing {
+    text-decoration: underline;
+}
+.NEditor .editarea .selecting {
+    text-decoration: underline;
+    background-color: aquamarine;
+}
+.NEditor .addtext {
+    caret-color: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    font: inherit;
+    color: transparent;
+    outline: none;
+    border: none;
+    background: white;
+    resize: none;
+    overflow: hidden;
+    width: 2px;
+    padding: 0px;
+    margin: 0px;
+    margin-left: -2px;
+    height: 23px;
+    opacity: 0;
+}
+.NEditor .infobar {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 20px;
+    font-size: 15px;
+    text-align: center;
+}
+.NEditor .addtext:focus {
+    animation: cursor 1s linear infinite;
+}
+@keyframes cursor {
+    0%,40%,100% {
+        opacity: 1;
+    }
+    50%,90% {
+        opacity: 0;
+    }
+}
