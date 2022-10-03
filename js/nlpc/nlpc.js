@@ -23,8 +23,8 @@ class NLPC {
             for (let func of funcs) {ret.push({name:func[0],args:func[1],child:func[2]});}
             return ret;
         }
-       // console.log("functions:");
-       // console.table(remakefunctable(functions));
+       console.log("functions:");
+       console.table(remakefunctable(functions));
 
 
         this.cr = [];
@@ -47,6 +47,7 @@ class NLPC {
 
             this.cr.push([5,functions[i][0]]);
 
+            console.log(functions[i])
             this.makechild(functions[i][2]);
 
         }
@@ -203,6 +204,7 @@ class NLPC {
                     child+=fcode[cc];
                 }
                 child = child.slice(1,child.length-1);
+                console.log(child)
                 child = this.parsechild([child],funcname);
                 functions.push([funcname,args,child]);
             }
@@ -255,7 +257,7 @@ class NLPC {
     }
     makechild(block) {
         
-        for (let fcc=0;fcc<block.length-1;fcc++) {
+        for (let fcc=0;fcc<block.length;fcc++) {
 
             if (typeof block[fcc] === 'object') {
                 // console.log(block[fcc])
@@ -267,6 +269,7 @@ class NLPC {
                         this.ifstat(block[fcc]);
                     break;
                     case "while":
+                        console.log("aaa")
                         this.whilestat(block[fcc]);
                     break;
                 }
@@ -288,6 +291,7 @@ class NLPC {
         this.cr.push([8,"#ifend"+thisifn]);
     }
     whilestat(whileobj) {
+        console.log("fa")
         this.objcnt["while"]++;
         let thisifn = this.objcnt["while"];
         this.cr.push([9,"#whilebegan"+thisifn]);
@@ -379,7 +383,9 @@ class NLPC {
                         thens+=fcode[cc];
                     }
                     thens = thens.slice(1,thens.length-1);
+                    console.log("while found",condit,thens)
                     thens = this.parsechild([thens]);
+                    console.log("while found",condit,thens)
                     child.push({type:"while",condition:condit,then:thens,});
                 }
                 else {
@@ -413,6 +419,9 @@ class NLPC {
         }
         // console.log(child)
         // console.log("")
+        if (child[child.length-1]==""){
+            child.pop();
+        }
         return child;
     }
     parseformula(fotxt) {
@@ -643,8 +652,36 @@ prog = `
 prog = `
 
 !main(){
-    4+5-5*5;
+    out(4+5-5*5);
     return;
+}
+
+`;
+prog = `
+
+!main(){
+    0 => x;
+    1 => y;
+    100 => c;
+    while(x<c){
+        y+x => x;
+    }
+    return;
+}
+
+`;
+prog = `
+
+!main(){
+    0 => x;
+    1 => y;
+    100 => c;
+    return;
+}
+!run(){
+    while(x<c){
+        y+x => x;
+    };
 }
 
 `;
