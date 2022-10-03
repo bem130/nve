@@ -673,15 +673,21 @@ prog = `
 prog = `
 
 !main(){
-    0 => x;
+    1 => x;
     1 => y;
+    1 => z;
     100 => c;
+    run();
     return;
 }
 !run(){
-    while(x<c){
-        y+x => x;
-    };
+    while(x c <){
+        y+x => z;
+        y => x;
+        z => y;
+        out(x);
+    }
+    return;
 }
 
 `;

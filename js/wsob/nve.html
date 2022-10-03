@@ -38,8 +38,8 @@ self.addEventListener("message", (e) => {
                 console.warn("it is not text-mode");
             }
             else {
-                console.log(e.data[1],(new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]])));
-                editor.putchar((new TextDecoder("utf-8")).decode(new Uint8Array([e.data[1]])));
+                console.log(e.data[1],(new TextDecoder("utf-8")).decode(new Uint16Array([e.data[1]])));
+                editor.putchar((new TextDecoder("utf-8")).decode(new Uint16Array([e.data[1]])));
             }
         break;
         case "display":
