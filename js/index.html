@@ -83,58 +83,6 @@ function resizeImg(draw) {
 
 
 code = `
-ssp 1
-jmp #callmain
-
-main:
-    call video
-    ret
-video:
-    push 0
-    push 0
-    popvar
-    #whilebegan1:
-        push 0
-        pushvar
-        push 80
-        gret
-        ifjmp #whileend1
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 0
-        add
-        vmov
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 1
-        add
-        vmov
-        push 255
-        push 0
-        pushvar
-        push 3
-        mul
-        push 2
-        add
-        vmov
-        push 0
-        pushvar
-        push 1
-        add
-        push 0
-        popvar
-        jmp #whilebegan1
-    #whileend1:
-#callmain:
-    call main
-`;
-code = `
 ssp 4
 jmp #callmain
 
@@ -154,9 +102,6 @@ main:
     call run
     ret
 run:
-    push 0
-    pushvar
-    out
     #whilebegan1:
         push 0
         pushvar
@@ -164,6 +109,9 @@ run:
         pushvar
         gret
         ifjmp #whileend1
+        push 0
+        pushvar
+        out
         push 1
         pushvar
         push 0
@@ -179,9 +127,6 @@ run:
         pushvar
         push 1
         popvar
-        push 0
-        pushvar
-        out
         jmp #whilebegan1
     #whileend1:
     ret

@@ -615,61 +615,7 @@ class NLPC {
 }
 
 let code
-prog = `
 
-!main(){
-    !video
-    return;
-}
-!video(){
-    0 => i;
-    while(i 80 <){
-        255 i 3 * 0 + vmov;
-        255 i 3 * 1 + vmov;
-        255 i 3 * 2 + vmov;
-        i 1 + => i;
-    }
-}
-
-`;
-prog = `
-
-!main(){
-    video();
-    return;
-}
-!video(){
-    0 => i;
-    while(i 80 <){
-        vmov(255,i*3+0);
-        vmov(255,i*3+1);
-        vmov(255,i*3+2);
-        i+1 => i;
-    }
-}
-
-`;
-prog = `
-
-!main(){
-    out(4+5-5*5);
-    return;
-}
-
-`;
-prog = `
-
-!main(){
-    0 => x;
-    1 => y;
-    100 => c;
-    while(x<c){
-        y+x => x;
-    }
-    return;
-}
-
-`;
 prog = `
 
 !main(){
@@ -682,11 +628,15 @@ prog = `
 }
 !run(){
     while(x c <){
+        out(x);
         y+x => z;
         y => x;
         z => y;
-        out(x);
     }
+    return;
+}
+!test(a){
+    out(x);
     return;
 }
 
