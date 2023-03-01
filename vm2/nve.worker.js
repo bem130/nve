@@ -1,5 +1,5 @@
 class NVE {
-    #prog;#imme;#memr;#progcnt;#stackp;#framp;#regi;#labeladr; // 宣言
+    #prog;#imme;#memr;#progcnt;#stackp;#framp;#regi;#labeladr;#ins; // 宣言
     constructor(program,args=[0]) { // 初期化
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
@@ -21,7 +21,22 @@ class NVE {
     }
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
-        //console.log(this.#prog[this.#regi[0]])
+        //console.log(this.#progcnt,this.#prog[this.#progcnt],this.#imme[this.#progcnt])
+        let memshow = function(mem,sp,fp) {
+            let ret = "";
+            for (let i=0;i<mem.length;i++) {
+                if (fp==i) {ret += ","}else {ret += " "}
+                if (sp==i) {ret += "."}else {ret += " "}
+                let memi = mem[i];
+                let n = memi.toString(10);
+                ret += "00".slice(n.length);
+                ret += n;
+            }
+            return ret
+        }
+        // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,13),this.#stackp,this.#framp)," pc:",this.#progcnt," sp:",this.#stackp," fp:",this.#framp)
+        // console.log("")
+        // console.log("[next]"," opcode:",this.#prog[this.#progcnt]," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt])
         switch (this.#prog[this.#progcnt]) {
             case 0: // push n スタックに即値を入れる
                 this.push(this.#imme[this.#progcnt]);
@@ -33,7 +48,7 @@ class NVE {
             break;
             case 2: // call 関数を呼ばれたとき
                 this.push(this.#framp);
-                this.#framp = this.#progcnt;
+                this.#framp = this.#stackp;
                 this.push(this.#progcnt);
                 this.#progcnt = this.#imme[this.#progcnt];
             break;
@@ -60,7 +75,7 @@ class NVE {
                 this.#progcnt = this.#imme[this.#progcnt];
             break;
             case 10: // ifjmp
-                if (this.pop()==0) {
+                if (this.pop()==1) {
                     this.#progcnt = this.#imme[this.#progcnt];
                 }
             break;
@@ -78,10 +93,22 @@ class NVE {
             case 14: // and
                 this.push(Boolean(this.pop())&Boolean(this.pop()));
             break;
+            case 15: // equal
+                this.push(Number(this.pop()==this.pop()));
+            break;
+            case 16: // less
+                this.push(Number(this.pop()<this.pop()));
+            break;
+            case 17: // greater
+                this.push(Number(this.pop()>this.pop()));
+            break;
+            case 18: // not
+                this.push(!Boolean(this.pop()));
+            break;
 
             // その他の命令
-            case 15: // out スタックトップの値を出力
-                console.log("out:",this.pop());
+            case 19: // out スタックトップの値を出力
+                console.log("[output] ",this.pop());
             break;
 
             default:
@@ -96,9 +123,10 @@ class NVE {
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
+        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","jmp","ifjmp","add","sub","mul","and","equal","less","greater","not","out"];
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","jmp","ifjmp","add","sub","mul","and","out"];
+        let ins = this.#ins;
         let lines = program.replace(/\r/g,"").split("\n");
         console.log("lines",lines)
         let tlss = [];
@@ -157,80 +185,130 @@ class NVE {
     getFunc() {return this.#labeladr}
 }
 
+let builtin = `
++/bin/bin:
+    getvar -1
+    getvar -2
+    add
+    ret
+&/bib/bib:
+    getvar -1
+    getvar -2
+    and
+    ret
+`
 let code;
-code = `
-; ローカル変数とグローバル変数のテスト
-fram 2
+code = `; 10回カウントする
+fram 0
 jmp #callmain
 
-; メインの関数
 main:
-    ; ローカル変数を1つ確保
-    fram 2
-    push 3
-    ; 3を1番のローカル変数に保存
-    setvar 1
-    ; 1番のローカル変数から取り出して出力
-    getvar 1
-    out
-    ; 2番のローカル変数から取り出して出力
-    getvar 2
-    out
-    ; 1番のローカル変数を1番のグローバル変数にコピー
-    getvar 1
-    setgvar 1
-    ; 1番のグローバル変数から取り出して出力
-    getgvar 1
-    out
-    ; 2番のグローバル変数から取り出して出力
-    getgvar 2
-    out
-    ; sub関数を呼ぶ
-    call sub
-    ; ローカル変数の領域を削除
-    pop 2
-    ret
-; サブの関数
-sub:
-    ; ローカル変数を1つ確保
-    fram 1
-    ; 1番のローカル変数から取り出して出力
-    getvar 1
-    out
-    ; 1番のグローバル変数から取り出して出力
-    getgvar 1
-    out
-    ; ローカル変数の領域を削除
+    push 1
+
+    #whilebegan1:
+        getvar 1
+        push 10
+        less
+    ifjmp #whileend1
+        getvar 1
+        out
+        getvar 1
+        push 1
+        add
+        setvar 1
+    jmp #whilebegan1
+    #whileend1:
+
     pop 1
     ret
 
 #callmain:
     call main
-    pop 2
+    pop 0
 `
 code = `
-; 関数の引数のテスト
 fram 0
 jmp #callmain
 
-; メインの関数
 main:
-    ; 引数1
-    push 2
-    ; 引数2
+    push 1
+    ifjmp #ifend1
+        push 100
+        call run
+        pop 1
+    #ifend1:
+    push 100
+    call run
+    pop 1
+
+    ret
+
+run:
+    fram 4
+
+    ; x
+    push 1
+    setvar 1
+    ; y
+    push 1
+    setvar 2
+
+    
+    ; z
+    push 1
+    setvar 2
+
+    ;jmp #whileend
+    #whilebegan1:
+        getvar -1
+        getvar 1
+        less
+    ifjmp #whileend1
+        getvar 1
+        out
+        getvar 2
+        getvar 1
+        add
+        setvar 3
+        getvar 2
+        setvar 1
+        getvar 3
+        setvar 2
+    jmp #whilebegan1
+    #whileend1:
+
+    pop 4
+    ret
+
+#callmain:
+    call main
+    pop 0
+`
+code = `; 関数の返り値のテスト
+fram 0
+jmp #callmain
+
+main:
+    push 0
+    ; 引数
+    push 6
     push 3
-    ; 関数呼び出し
-    call sub
+    ; add関数呼び出し
+    call add
     ; 引数削除
     pop 2
+    out
     ret
-sub:
-    ; 引数2
-    getvar -1
-    out
-    ; 引数1
+add:
+    ; 引数
     getvar -2
-    out
+    getvar -3
+
+    ; 処理
+    add
+
+    ; 返り値
+    setvar -4
     ret
 
 #callmain:
@@ -240,4 +318,4 @@ sub:
 
 let a = new NVE(code);
 a.runall();
-console.log(a.getData())
+// console.log(a.getData())
