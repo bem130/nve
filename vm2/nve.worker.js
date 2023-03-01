@@ -4,7 +4,7 @@ class NVE {
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
         this.#imme = tbr[1]; // 即値
-        this.#memr = new Int32Array(1024); // 実行用スタック
+        this.#memr = new Int16Array(1024); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
         this.#framp = 0;
@@ -28,15 +28,15 @@ class NVE {
                 if (fp==i) {ret += ","}else {ret += " "}
                 if (sp==i) {ret += "."}else {ret += " "}
                 let memi = mem[i];
-                let n = memi.toString(10);
+                let n = memi.toString(16);
                 ret += "00".slice(n.length);
                 ret += n;
             }
             return ret
         }
-        // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,13),this.#stackp,this.#framp)," pc:",this.#progcnt," sp:",this.#stackp," fp:",this.#framp)
-        // console.log("")
-        // console.log("[next]"," opcode:",this.#prog[this.#progcnt]," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt])
+        console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
+        console.log("")
+        console.log("[next]"," opcode:",this.#prog[this.#progcnt].toString(16)," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt].toString(16))
         switch (this.#prog[this.#progcnt]) {
             case 0: // push n スタックに即値を入れる
                 this.push(this.#imme[this.#progcnt]);
@@ -56,8 +56,10 @@ class NVE {
                 this.#progcnt = this.pop();
                 this.#framp = this.pop();
             break;
-            case 4: // fram m 局所変数の領域を確保する
-                this.#stackp += this.#imme[this.#progcnt];
+            case 4: // fram m 局所変数の領域を確保する 0埋めする
+                for (let i=0;i<this.#imme[this.#progcnt];i++) {
+                    this.push(0);
+                }
             break;
             case 5: // setvar a a個目の局所変数に値を入れる
                 this.#memr[this.#framp+this.#imme[this.#progcnt]] = this.pop();
@@ -84,31 +86,30 @@ class NVE {
             case 11: // add
                 this.push(this.pop()+this.pop());
             break;
-            case 12: // sub
-                this.push(-this.pop()+this.pop());
+            case 12: // addc
+                let cs = this.pop()+this.pop()+this.pop();
+                this.push(cs>>>8);
+                this.push(cs&0xff);
             break;
-            case 13: // mul
-                this.push(this.pop()*this.pop());
-            break;
-            case 14: // and
+            case 13: // and
                 this.push(Boolean(this.pop())&Boolean(this.pop()));
             break;
-            case 15: // equal
+            case 14: // equal
                 this.push(Number(this.pop()==this.pop()));
             break;
-            case 16: // less
+            case 15: // less
                 this.push(Number(this.pop()<this.pop()));
             break;
-            case 17: // greater
+            case 16: // greater
                 this.push(Number(this.pop()>this.pop()));
             break;
-            case 18: // not
+            case 17: // not
                 this.push(!Boolean(this.pop()));
             break;
 
             // その他の命令
-            case 19: // out スタックトップの値を出力
-                console.log("[output] ",this.pop());
+            case 18: // out スタックトップの値を出力
+                console.log("[output] ",this.pop().toString(16));
             break;
 
             default:
@@ -123,7 +124,7 @@ class NVE {
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
-        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","jmp","ifjmp","add","sub","mul","and","equal","less","greater","not","out"];
+        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","jmp","ifjmp","add","addc","and","equal","less","greater","not","out"];
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
         let ins = this.#ins;
@@ -148,7 +149,7 @@ class NVE {
             if (tls[tls.length-1]==":") {icnt--;}
         }
         let prog = new Uint8ClampedArray(icnt);
-        let imme = new Int32Array(icnt);
+        let imme = new Int16Array(icnt);
         let ic = 0;
         let labeladr = {};
         for (let i=0;i<tlss.length;i++) {
@@ -174,7 +175,7 @@ class NVE {
         this.#labeladr = labeladr;
         return [prog,imme];
     }
-    endRunning() {if(this.#progcnt>this.#prog.length){return true};return false;}
+    endRunning() {if(this.#progcnt>=this.#prog.length){return true};return false;}
     nextRead() {if(this.#prog[this.#progcnt]==5){return true};return false;}
     getProg() {return this.#prog}
     getImme() {return this.#imme}
@@ -232,36 +233,12 @@ jmp #callmain
 
 main:
     push 1
-    ifjmp #ifend1
-        push 100
-        call run
-        pop 1
-    #ifend1:
-    push 100
-    call run
-    pop 1
-
-    ret
-
-run:
-    fram 4
-
-    ; x
     push 1
-    setvar 1
-    ; y
     push 1
-    setvar 2
-
-    
-    ; z
-    push 1
-    setvar 2
-
     ;jmp #whileend
     #whilebegan1:
-        getvar -1
         getvar 1
+        push 1000000
         less
     ifjmp #whileend1
         getvar 1
@@ -276,39 +253,89 @@ run:
         setvar 2
     jmp #whilebegan1
     #whileend1:
-
-    pop 4
+    pop 3
     ret
 
 #callmain:
     call main
     pop 0
 `
-code = `; 関数の返り値のテスト
+code = `; addcのテスト
 fram 0
 jmp #callmain
 
 main:
+
+    ; 134 164 + out
+
     push 0
-    ; 引数
-    push 6
-    push 3
-    ; add関数呼び出し
-    call add
-    ; 引数削除
-    pop 2
+    push 134
+    push 164
+    addc
     out
+    out
+
+    ; 270 128 + out
+
+    push 0
+    push 14
+    push 128
+    addc
+    push 1
+    push 0
+    addc
+    out
+    out
+    out
+
     ret
-add:
-    ; 引数
+
+#callmain:
+    call main
+    pop 0
+`
+code = `; 複数バイトのテスト
+fram 0
+jmp #callmain
+
+main:
+   
+    ; 0x1a61 0x35e6 0x0000 + out
+    ; 6753 13798 0 + out
+    ; 26 97 53 230 0 0 + out
+
+    fram 2   ; 返り値 c1
+    fram 2   ; 返り値 c2
+    ; 引数たち (A2 A1 B2 B1) c2
+    push 26  ; -5 A2
+    push 97  ; -4 A1
+    push 53  ; -3 B2
+    push 230 ; -2 B1
+
+    call add2byte ; c2
+    pop 4    ; 引数削除 c2
+    ; 引数たち (B2 B1) c1
+    push 0
+    push 0
+    call add2byte ; c1
+    pop 4    ; 引数削除 c1
+
+    out
+    out
+
+    ret
+
+add2byte:
+    push 0
     getvar -2
+    getvar -4
+    addc
+    setvar -6
     getvar -3
-
-    ; 処理
-    add
-
-    ; 返り値
-    setvar -4
+    getvar -5
+    addc
+    setvar -7
+    pop 1
     ret
 
 #callmain:
