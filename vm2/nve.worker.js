@@ -4,7 +4,7 @@ class NVE {
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
         this.#imme = tbr[1]; // 即値
-        this.#memr = new Int16Array(1024); // 実行用スタック
+        this.#memr = new Uint8Array(256); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
         this.#framp = 0;
@@ -34,9 +34,10 @@ class NVE {
             }
             return ret
         }
-        console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
-        console.log("")
-        console.log("[next]"," opcode:",this.#prog[this.#progcnt].toString(16)," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt].toString(16))
+        // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
+        // console.log("")
+        // console.log("[next]"," opcode:",this.#prog[this.#progcnt].toString(16)," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt].toString(16))
+        let adr = function(n) {return n&255;};
         switch (this.#prog[this.#progcnt]) {
             case 0: // push n スタックに即値を入れる
                 this.push(this.#imme[this.#progcnt]);
@@ -62,16 +63,16 @@ class NVE {
                 }
             break;
             case 5: // setvar a a個目の局所変数に値を入れる
-                this.#memr[this.#framp+this.#imme[this.#progcnt]] = this.pop();
+                this.#memr[(this.#framp+this.#imme[this.#progcnt])&255] = this.pop();
             break;
             case 6: // getvar a a個目の局所変数から値を複製する
-                this.push(this.#memr[this.#framp+this.#imme[this.#progcnt]]);
+                this.push(this.#memr[(this.#framp+this.#imme[this.#progcnt])&255]);
             break;
             case 7: // setgvar a a個目のグローバル変数に値を入れる
-                this.#memr[this.#imme[this.#progcnt]] = this.pop();
+                this.#memr[(this.#imme[this.#progcnt])&255] = this.pop();
             break;
             case 8: // getgvar a a個目のグローバル変数から値を複製する
-                this.push(this.#memr[this.#imme[this.#progcnt]]);
+                this.push(this.#memr[(this.#imme[this.#progcnt])&255]);
             break;
             case 9: // jmp
                 this.#progcnt = this.#imme[this.#progcnt];
@@ -129,7 +130,7 @@ class NVE {
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
         let ins = this.#ins;
         let lines = program.replace(/\r/g,"").split("\n");
-        console.log("lines",lines)
+        //console.log("lines",lines)
         let tlss = [];
         for (let l=0;l<lines.length;l++) {
             let s;
@@ -148,8 +149,8 @@ class NVE {
             icnt++;
             if (tls[tls.length-1]==":") {icnt--;}
         }
-        let prog = new Uint8ClampedArray(icnt);
-        let imme = new Int16Array(icnt);
+        let prog = new Uint8Array(icnt);
+        let imme = new Uint8Array(icnt);
         let ic = 0;
         let labeladr = {};
         for (let i=0;i<tlss.length;i++) {
@@ -160,19 +161,21 @@ class NVE {
             }
         }
         ic = 0;
+        let comp = function(n){if(n<0){return (~-n)+1;}else{return n;}}
         for (let i=0;i<tlss.length;i++) {
             if (tlss[i][0][tlss[i][0].length-1]==":") {continue;}
             if (ins.indexOf(tlss[i][0])==-1) {continue;}
             prog[ic] = ins.indexOf(tlss[i][0]);
             if (["jmp","ifjmp","call"].indexOf(tlss[i][0])!=-1) {
-                imme[ic] = labeladr[tlss[i][1]]-1;
+                imme[ic] = comp(labeladr[tlss[i][1]]-1);
             }
             else if (tlss[i].length>0) {
-                imme[ic] = parseInt(tlss[i][1]);
+                imme[ic] = comp(parseInt(tlss[i][1]));
             }
             ic++;
         }
         this.#labeladr = labeladr;
+        console.log(imme)
         return [prog,imme];
     }
     endRunning() {if(this.#progcnt>=this.#prog.length){return true};return false;}
@@ -299,10 +302,15 @@ fram 0
 jmp #callmain
 
 main:
-   
-    ; 0x1a61 0x35e6 0x0000 + out
-    ; 6753 13798 0 + out
-    ; 26 97 53 230 0 0 + out
+    ;call add2bytetest
+    call add4bytetest
+    ret
+
+add2bytetest:
+    ; 0x1a61 0x35e6 0x0000 + + out
+    ; 6753 13798 0 + + out
+    ; 26 97 53 230 0 0 + + out
+    ; 4750 18256
 
     fram 2   ; 返り値 c1
     fram 2   ; 返り値 c2
@@ -324,6 +332,31 @@ main:
     out
 
     ret
+    
+add4bytetest:
+    ; 0x19a92697 0xf03a5325 + out
+    ; 109E379BC 4460870076
+
+    fram 4   ; 返り値
+    ; 引数たち (A4 A3 A2 A1 B4 B3 B2 B1)
+    push 25  ; -9 A4
+    push 169  ; -8 A3
+    push 38  ; -7 A2
+    push 151  ; -6 A1
+    push 240  ; -5 B4
+    push 58  ; -4 B3
+    push 83  ; -3 B2
+    push 37 ; -2 B1
+
+    call add4byte ;
+    pop 8    ; 引数削除
+
+    out
+    out
+    out
+    out
+
+    ret
 
 add2byte:
     push 0
@@ -335,6 +368,27 @@ add2byte:
     getvar -5
     addc
     setvar -7
+    pop 1
+    ret
+
+add4byte:
+    push 0
+    getvar -2
+    getvar -6
+    addc
+    setvar -10
+    getvar -3
+    getvar -7
+    addc
+    setvar -11
+    getvar -4
+    getvar -8
+    addc
+    setvar -12
+    getvar -5
+    getvar -9
+    addc
+    setvar -13
     pop 1
     ret
 
