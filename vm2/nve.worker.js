@@ -4,7 +4,7 @@ class NVE {
         let tbr = this.tbyte(program);
         this.#prog = tbr[0]; // プログラム
         this.#imme = tbr[1]; // 即値
-        this.#memr = new Uint8Array(256); // 実行用スタック
+        this.#memr = new Uint32Array(2**32); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
         this.#framp = 0;
@@ -29,7 +29,7 @@ class NVE {
                 if (sp==i) {ret += "."}else {ret += " "}
                 let memi = mem[i];
                 let n = memi.toString(16);
-                ret += "00".slice(n.length);
+                ret += "00000000".slice(n.length);
                 ret += n;
             }
             return ret
@@ -37,7 +37,7 @@ class NVE {
         // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
         // console.log("")
         // console.log("[next]"," opcode:",this.#prog[this.#progcnt].toString(16)," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt].toString(16))
-        let adr = function(n) {return n&255;};
+        let adr = function(n) {return n&((2**32)-1);};
         switch (this.#prog[this.#progcnt]) {
             case 0: // push n スタックに即値を入れる
                 this.push(this.#imme[this.#progcnt]);
@@ -62,57 +62,77 @@ class NVE {
                     this.push(0);
                 }
             break;
+            // データ移動命令
             case 5: // setvar a a個目の局所変数に値を入れる
-                this.#memr[(this.#framp+this.#imme[this.#progcnt])&255] = this.pop();
+                this.#memr[(this.#framp+this.#imme[this.#progcnt])&((2**32)-1)] = this.pop();
             break;
             case 6: // getvar a a個目の局所変数から値を複製する
-                this.push(this.#memr[(this.#framp+this.#imme[this.#progcnt])&255]);
+                this.push(this.#memr[(this.#framp+this.#imme[this.#progcnt])&((2**32)-1)]);
             break;
             case 7: // setgvar a a個目のグローバル変数に値を入れる
-                this.#memr[(this.#imme[this.#progcnt])&255] = this.pop();
+                this.#memr[(this.#imme[this.#progcnt])&((2**32)-1)] = this.pop();
             break;
             case 8: // getgvar a a個目のグローバル変数から値を複製する
-                this.push(this.#memr[(this.#imme[this.#progcnt])&255]);
+                this.push(this.#memr[(this.#imme[this.#progcnt])&((2**32)-1)]);
             break;
-            case 9: // jmp
+            case 9: // setdata a a個目のヒープ領域に値を入れる
+                this.#memr[this.#imme.length-((this.#imme[this.#progcnt])&((2**32)-1))] = this.pop();
+            break;
+            case 10: // getdata a a個目のヒープ領域から値を複製する
+                this.push(this.#memr[this.#imme.length-((this.#imme[this.#progcnt])&((2**32)-1))]);
+            break;
+            // ジャンプ命令
+            case 11: // jmp
                 this.#progcnt = this.#imme[this.#progcnt];
             break;
-            case 10: // ifjmp
-                if (this.pop()==1) {
+            case 12: // ifjmp
+                if (this.pop()!=0) {
                     this.#progcnt = this.#imme[this.#progcnt];
                 }
             break;
 
-            // 演算命令たち
-            case 11: // add
+            // 2項算術演算
+            case 13: // add
                 this.push(this.pop()+this.pop());
             break;
-            case 12: // addc
+            case 14: // addc
                 let cs = this.pop()+this.pop()+this.pop();
-                this.push(cs>>>8);
-                this.push(cs&0xff);
+                this.push(cs>>>32);
+                this.push(cs&((2**32)-1));
             break;
-            case 13: // and
-                this.push(Boolean(this.pop())&Boolean(this.pop()));
+            // 2項ビット演算
+            case 15: // and
+                this.push(this.pop()&this.pop());
             break;
-            case 14: // equal
+            case 16: // or
+                this.push(this.pop()|this.pop());
+            break;
+            case 17: // xor
+                this.push(this.pop()^this.pop());
+            break;
+            // 2項比較演算
+            case 18: // equal
                 this.push(Number(this.pop()==this.pop()));
             break;
-            case 15: // less
+            case 19: // less
                 this.push(Number(this.pop()<this.pop()));
             break;
-            case 16: // greater
+            case 20: // greater
                 this.push(Number(this.pop()>this.pop()));
             break;
-            case 17: // not
-                this.push(!Boolean(this.pop()));
+            // 単項ビット演算
+            case 21: // not
+                this.push(~this.pop());
+            break;
+            // 単項論理演算
+            case 22: // notb
+                this.push(Number(!this.pop()));
             break;
 
-            // その他の命令
-            case 18: // out スタックトップの値を出力
+            // 入出力命令
+            case 23: // out スタックトップの値を出力
                 console.log("[output] ",this.pop().toString(16));
             break;
-
             default:
             break;
         }
@@ -125,7 +145,7 @@ class NVE {
         return this;
     }
     tbyte(program) { // テキストを数値の配列に変換する
-        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","jmp","ifjmp","add","addc","and","equal","less","greater","not","out"];
+        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
         let icnt = 0;
         // m memory; i immeddiate; p memory-pointer; x result; a,b args;
         let ins = this.#ins;
@@ -149,8 +169,8 @@ class NVE {
             icnt++;
             if (tls[tls.length-1]==":") {icnt--;}
         }
-        let prog = new Uint8Array(icnt);
-        let imme = new Uint8Array(icnt);
+        let prog = new Uint32Array(icnt);
+        let imme = new Uint32Array(icnt);
         let ic = 0;
         let labeladr = {};
         for (let i=0;i<tlss.length;i++) {
@@ -397,6 +417,43 @@ add4byte:
     pop 0
 `
 
+code = `; 複数バイトのテスト
+fram 0
+jmp #callmain
+
+main:
+    call addtest
+    ret
+    
+addtest:
+    ; 0x19a92697 + 0xf03a5325 => 0x109e379bc
+    ; 430515863 + 4030354213 => 4460870076
+
+    fram 1   ; 返り値 -4
+    ; 引数たち (A1 B1)
+    push 430515863  ; -3 A1
+    push 4030354213 ; -2 B1
+
+    call add1word ;
+    pop 2    ; 引数削除
+
+    out
+
+    ret
+
+add1word:
+    push 0
+    getvar -2
+    getvar -3
+    addc
+    setvar -4
+    pop 1
+    ret
+
+#callmain:
+    call main
+    pop 0
+`
 let a = new NVE(code);
 a.runall();
 // console.log(a.getData())
