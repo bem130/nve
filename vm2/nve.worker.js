@@ -1,20 +1,22 @@
 const fs = require("fs");
 class NVE {
-    #memr;#progcnt;#stackp;#framp;#regi;#labeladr;#ins; // 宣言
+    #memr;#progcnt;#stackp;#framp; // 宣言
     constructor(file,args=[0]) { // 初期化
         this.file = file;
         this.check(file);
+        let _size = new Uint8Array((this.file.slice(6,10)))
+        this.size = _size[0]+_size[1]*0x100+_size[2]*0x10000+_size[3]*0x1000000;
         this.#memr = new Uint32Array(2**32); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
         this.#framp = 0;
     }
     prog(i) {
-        let a = new Uint8Array(this.file.slice(5+i*5,5+i*5+1))
+        let a = new Uint8Array(this.file.slice(10+i*5,10+i*5+1))
         return a[0];
     }
     imme(i) {
-        let a = new Uint8Array(this.file.slice(5+i*5+1,5+i*5+5))
+        let a = new Uint8Array(this.file.slice(10+i*5+1,10+i*5+5))
         return a[0]+a[1]*0x100+a[2]*0x10000+a[3]*0x1000000;
     }
     push(x) {
@@ -154,11 +156,11 @@ class NVE {
         return this;
     }
     check(file) {
-        if (!(new TextDecoder("utf-8")).decode(new Uint8Array(file)).startsWith("nveof")) {
+        if (!(new TextDecoder("utf-8")).decode(new Uint8Array(file)).startsWith("nveof\n")) {
             throw "This file is not NVE-OF";
         }
     }
-    endRunning() {return (this.#progcnt>=(this.file.byteLength-5)/5)}
+    endRunning() {return this.#progcnt>=this.size}
 }
 
 let path = "./out.o"

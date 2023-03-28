@@ -62,7 +62,6 @@ function main(path) {
     let file = fs.readFileSync(path,"utf-8");
     //console.log(file);
     let val = NVEASM(file);
-    let ret = "";
     let progbuffer = new Uint8Array(val[0]);
     let immebuffer = new Uint8Array(val[1]);
     let retbuffer = new ArrayBuffer(val[2]*5);
@@ -74,10 +73,12 @@ function main(path) {
         _retbuffer[i*5+3] = immebuffer[i*4+2];
         _retbuffer[i*5+4] = immebuffer[i*4+3];
     }
-    console.log(retbuffer)
-    let head = "nveof";
+    let head = "nveof\n";
     let headbuf =  (new TextEncoder("utf-8")).encode(head);
-    let data = Buffer.concat([Buffer.from(headbuf),Buffer.from(retbuffer)])
+    let size_buf = new ArrayBuffer(4);
+    let size_ = new Uint32Array(size_buf);
+    size_[0] = val[2];
+    let data = Buffer.concat([Buffer.from(headbuf),Buffer.from(size_buf),Buffer.from(retbuffer),Buffer.from((new TextEncoder("utf-8")).encode("\n4:main:void:int,int 15:sub:int:int\n1:flag1:bool 1:PI:double\nthis.sub lib1.sum\nlib2.print lib1.pi"))])
     fs.writeFile("out.o", data, (err) => {
       if (err) throw err;
       console.log('Completed');
