@@ -1,13 +1,21 @@
+const fs = require("fs");
 class NVE {
-    #prog;#imme;#memr;#progcnt;#stackp;#framp;#regi;#labeladr;#ins; // 宣言
-    constructor(program,args=[0]) { // 初期化
-        let tbr = this.tbyte(program);
-        this.#prog = tbr[0]; // プログラム
-        this.#imme = tbr[1]; // 即値
+    #memr;#progcnt;#stackp;#framp;#regi;#labeladr;#ins; // 宣言
+    constructor(file,args=[0]) { // 初期化
+        this.file = file;
+        this.check(file);
         this.#memr = new Uint32Array(2**32); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
         this.#framp = 0;
+    }
+    prog(i) {
+        let a = new Uint8Array(this.file.slice(5+i*5,5+i*5+1))
+        return a[0];
+    }
+    imme(i) {
+        let a = new Uint8Array(this.file.slice(5+i*5+1,5+i*5+5))
+        return a[0]+a[1]*0x100+a[2]*0x10000+a[3]*0x1000000;
     }
     push(x) {
         this.#memr[this.#stackp] = x;
@@ -22,28 +30,29 @@ class NVE {
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
         //console.log(this.#progcnt,this.#prog[this.#progcnt],this.#imme[this.#progcnt])
-        let memshow = function(mem,sp,fp) {
-            let ret = "";
-            for (let i=0;i<mem.length;i++) {
-                if (fp==i) {ret += ","}else {ret += " "}
-                if (sp==i) {ret += "."}else {ret += " "}
-                let memi = mem[i];
-                let n = memi.toString(16);
-                ret += "00000000".slice(n.length);
-                ret += n;
-            }
-            return ret
-        }
+        // let memshow = function(mem,sp,fp) {
+        //     let ret = "";
+        //     for (let i=0;i<mem.length;i++) {
+        //         if (fp==i) {ret += ","}else {ret += " "}
+        //         if (sp==i) {ret += "."}else {ret += " "}
+        //         let memi = mem[i];
+        //         let n = memi.toString(16);
+        //         ret += "00000000".slice(n.length);
+        //         ret += n;
+        //     }
+        //     return ret
+        // }
+        // let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
         // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
         // console.log("")
-        // console.log("[next]"," opcode:",this.#prog[this.#progcnt].toString(16)," mnemonic:",this.#ins[this.#prog[this.#progcnt]]," immediate:",this.#imme[this.#progcnt].toString(16))
+        // console.log("[next]"," opcode:",this.prog(this.#progcnt).toString(16)," mnemonic:",ins[this.prog(this.#progcnt)]," immediate:",this.imme(this.#progcnt).toString(16))
         let adr = function(n) {return n&((2**32)-1);};
-        switch (this.#prog[this.#progcnt]) {
+        switch (this.prog(this.#progcnt)) {
             case 0: // push n スタックに即値を入れる
-                this.push(this.#imme[this.#progcnt]);
+                this.push(this.imme(this.#progcnt));
             break;
             case 1: // pop n スタックトップの値をn個消す
-                for (let i=0;i<this.#imme[this.#progcnt];i++) {
+                for (let i=0;i<this.imme(this.#progcnt);i++) {
                     this.pop();
                 }
             break;
@@ -51,43 +60,43 @@ class NVE {
                 this.push(this.#framp);
                 this.#framp = this.#stackp;
                 this.push(this.#progcnt);
-                this.#progcnt = this.#imme[this.#progcnt];
+                this.#progcnt = this.imme(this.#progcnt);
             break;
             case 3: // ret 関数から返るとき
                 this.#progcnt = this.pop();
                 this.#framp = this.pop();
             break;
             case 4: // fram m 局所変数の領域を確保する 0埋めする
-                for (let i=0;i<this.#imme[this.#progcnt];i++) {
+                for (let i=0;i<this.imme(this.#progcnt);i++) {
                     this.push(0);
                 }
             break;
             // データ移動命令
             case 5: // setvar a a個目の局所変数に値を入れる
-                this.#memr[(this.#framp+this.#imme[this.#progcnt])&((2**32)-1)] = this.pop();
+                this.#memr[(this.#framp+this.imme(this.#progcnt))&((2**32)-1)] = this.pop();
             break;
             case 6: // getvar a a個目の局所変数から値を複製する
-                this.push(this.#memr[(this.#framp+this.#imme[this.#progcnt])&((2**32)-1)]);
+                this.push(this.#memr[(this.#framp+this.imme(this.#progcnt))&((2**32)-1)]);
             break;
             case 7: // setgvar a a個目のグローバル変数に値を入れる
-                this.#memr[(this.#imme[this.#progcnt])&((2**32)-1)] = this.pop();
+                this.#memr[(this.imme(this.#progcnt))&((2**32)-1)] = this.pop();
             break;
             case 8: // getgvar a a個目のグローバル変数から値を複製する
-                this.push(this.#memr[(this.#imme[this.#progcnt])&((2**32)-1)]);
+                this.push(this.#memr[(this.imme(this.#progcnt))&((2**32)-1)]);
             break;
             case 9: // setdata a a個目のヒープ領域に値を入れる
-                this.#memr[this.#imme.length-((this.#imme[this.#progcnt])&((2**32)-1))] = this.pop();
+                this.#memr[this.#memr.length-((this.imme(this.#progcnt))&((2**32)-1))] = this.pop();
             break;
             case 10: // getdata a a個目のヒープ領域から値を複製する
-                this.push(this.#memr[this.#imme.length-((this.#imme[this.#progcnt])&((2**32)-1))]);
+                this.push(this.#memr[this.#memr.length-((this.imme(this.#progcnt))&((2**32)-1))]);
             break;
             // ジャンプ命令
             case 11: // jmp
-                this.#progcnt = this.#imme[this.#progcnt];
+                this.#progcnt = this.imme(this.#progcnt);
             break;
             case 12: // ifjmp
                 if (this.pop()!=0) {
-                    this.#progcnt = this.#imme[this.#progcnt];
+                    this.#progcnt = this.imme(this.#progcnt);
                 }
             break;
 
@@ -144,316 +153,15 @@ class NVE {
         while (cnt<100000&&!this.endRunning()) {cnt++;this.next();}
         return this;
     }
-    tbyte(program) { // テキストを数値の配列に変換する
-        this.#ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
-        let icnt = 0;
-        // m memory; i immeddiate; p memory-pointer; x result; a,b args;
-        let ins = this.#ins;
-        let lines = program.replace(/\r/g,"").split("\n");
-        //console.log("lines",lines)
-        let tlss = [];
-        for (let l=0;l<lines.length;l++) {
-            let s;
-            for (s=0;s<lines[l].length;s++) {
-                if (lines[l][s]!=" ") {break;}
-            }
-            let c;
-            for (c=0;c<lines[l].length;c++) {
-                if (lines[l][c]==";") {break;}
-            }
-            let tl = lines[l].slice(s,c);
-            if (tl.length==0) {continue;}
-            let tls = tl.split(" ");
-            tlss.push(tls);
-            if (ins.indexOf(tls[0])==-1) {continue;}
-            icnt++;
-            if (tls[tls.length-1]==":") {icnt--;}
+    check(file) {
+        if (!(new TextDecoder("utf-8")).decode(new Uint8Array(file)).startsWith("nveof")) {
+            throw "This file is not NVE-OF";
         }
-        let prog = new Uint32Array(icnt);
-        let imme = new Uint32Array(icnt);
-        let ic = 0;
-        let labeladr = {};
-        for (let i=0;i<tlss.length;i++) {
-            ic++;
-            if (tlss[i][0][tlss[i][0].length-1]==":") {
-                ic--;
-                labeladr[tlss[i][0].slice(0,tlss[i][0].length-1)] = ic;
-            }
-        }
-        ic = 0;
-        let comp = function(n){if(n<0){return (~-n)+1;}else{return n;}}
-        for (let i=0;i<tlss.length;i++) {
-            if (tlss[i][0][tlss[i][0].length-1]==":") {continue;}
-            if (ins.indexOf(tlss[i][0])==-1) {continue;}
-            prog[ic] = ins.indexOf(tlss[i][0]);
-            if (["jmp","ifjmp","call"].indexOf(tlss[i][0])!=-1) {
-                imme[ic] = comp(labeladr[tlss[i][1]]-1);
-            }
-            else if (tlss[i].length>0) {
-                imme[ic] = comp(parseInt(tlss[i][1]));
-            }
-            ic++;
-        }
-        this.#labeladr = labeladr;
-        console.log(imme)
-        return [prog,imme];
     }
-    endRunning() {if(this.#progcnt>=this.#prog.length){return true};return false;}
-    nextRead() {if(this.#prog[this.#progcnt]==5){return true};return false;}
-    getProg() {return this.#prog}
-    getImme() {return this.#imme}
-    getData() {return this.#memr}
-    getIptr() {return this.#progcnt}
-    getDptr() {return this.#stackp}
-    getRegi() {return this.#regi}
-    getFunc() {return this.#labeladr}
+    endRunning() {return (this.#progcnt>=(this.file.byteLength-5)/5)}
 }
 
-let builtin = `
-+/bin/bin:
-    getvar -1
-    getvar -2
-    add
-    ret
-&/bib/bib:
-    getvar -1
-    getvar -2
-    and
-    ret
-`
-let code;
-code = `; 10回カウントする
-fram 0
-jmp #callmain
-
-main:
-    push 1
-
-    #whilebegan1:
-        getvar 1
-        push 10
-        less
-    ifjmp #whileend1
-        getvar 1
-        out
-        getvar 1
-        push 1
-        add
-        setvar 1
-    jmp #whilebegan1
-    #whileend1:
-
-    pop 1
-    ret
-
-#callmain:
-    call main
-    pop 0
-`
-code = `
-fram 0
-jmp #callmain
-
-main:
-    push 1
-    push 1
-    push 1
-    ;jmp #whileend
-    #whilebegan1:
-        getvar 1
-        push 1000000
-        less
-    ifjmp #whileend1
-        getvar 1
-        out
-        getvar 2
-        getvar 1
-        add
-        setvar 3
-        getvar 2
-        setvar 1
-        getvar 3
-        setvar 2
-    jmp #whilebegan1
-    #whileend1:
-    pop 3
-    ret
-
-#callmain:
-    call main
-    pop 0
-`
-code = `; addcのテスト
-fram 0
-jmp #callmain
-
-main:
-
-    ; 134 164 + out
-
-    push 0
-    push 134
-    push 164
-    addc
-    out
-    out
-
-    ; 270 128 + out
-
-    push 0
-    push 14
-    push 128
-    addc
-    push 1
-    push 0
-    addc
-    out
-    out
-    out
-
-    ret
-
-#callmain:
-    call main
-    pop 0
-`
-code = `; 複数バイトのテスト
-fram 0
-jmp #callmain
-
-main:
-    ;call add2bytetest
-    call add4bytetest
-    ret
-
-add2bytetest:
-    ; 0x1a61 0x35e6 0x0000 + + out
-    ; 6753 13798 0 + + out
-    ; 26 97 53 230 0 0 + + out
-    ; 4750 18256
-
-    fram 2   ; 返り値 c1
-    fram 2   ; 返り値 c2
-    ; 引数たち (A2 A1 B2 B1) c2
-    push 26  ; -5 A2
-    push 97  ; -4 A1
-    push 53  ; -3 B2
-    push 230 ; -2 B1
-
-    call add2byte ; c2
-    pop 4    ; 引数削除 c2
-    ; 引数たち (B2 B1) c1
-    push 0
-    push 0
-    call add2byte ; c1
-    pop 4    ; 引数削除 c1
-
-    out
-    out
-
-    ret
-    
-add4bytetest:
-    ; 0x19a92697 0xf03a5325 + out
-    ; 109E379BC 4460870076
-
-    fram 4   ; 返り値
-    ; 引数たち (A4 A3 A2 A1 B4 B3 B2 B1)
-    push 25  ; -9 A4
-    push 169  ; -8 A3
-    push 38  ; -7 A2
-    push 151  ; -6 A1
-    push 240  ; -5 B4
-    push 58  ; -4 B3
-    push 83  ; -3 B2
-    push 37 ; -2 B1
-
-    call add4byte ;
-    pop 8    ; 引数削除
-
-    out
-    out
-    out
-    out
-
-    ret
-
-add2byte:
-    push 0
-    getvar -2
-    getvar -4
-    addc
-    setvar -6
-    getvar -3
-    getvar -5
-    addc
-    setvar -7
-    pop 1
-    ret
-
-add4byte:
-    push 0
-    getvar -2
-    getvar -6
-    addc
-    setvar -10
-    getvar -3
-    getvar -7
-    addc
-    setvar -11
-    getvar -4
-    getvar -8
-    addc
-    setvar -12
-    getvar -5
-    getvar -9
-    addc
-    setvar -13
-    pop 1
-    ret
-
-#callmain:
-    call main
-    pop 0
-`
-
-code = `; 複数バイトのテスト
-fram 0
-jmp #callmain
-
-main:
-    call addtest
-    ret
-    
-addtest:
-    ; 0x19a92697 + 0xf03a5325 => 0x109e379bc
-    ; 430515863 + 4030354213 => 4460870076
-
-    fram 1   ; 返り値 -4
-    ; 引数たち (A1 B1)
-    push 430515863  ; -3 A1
-    push 4030354213 ; -2 B1
-
-    call add1word ;
-    pop 2    ; 引数削除
-
-    out
-
-    ret
-
-add1word:
-    push 0
-    getvar -2
-    getvar -3
-    addc
-    setvar -4
-    pop 1
-    ret
-
-#callmain:
-    call main
-    pop 0
-`
-let a = new NVE(code);
+let path = "./out.o"
+let a = new NVE(fs.readFileSync(path));
 a.runall();
 // console.log(a.getData())
