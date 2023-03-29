@@ -74,15 +74,19 @@ function main(path) {
         _retbuffer[i*5+4] = immebuffer[i*4+3];
     }
     let head = "nveof\n";
-    let headbuf =  (new TextEncoder("utf-8")).encode(head);
+    let headbuf =  txt2arr(head);
     let size_buf = new ArrayBuffer(4);
     let size_ = new Uint32Array(size_buf);
     size_[0] = val[2];
-    let data = Buffer.concat([Buffer.from(headbuf),Buffer.from(size_buf),Buffer.from(retbuffer),Buffer.from((new TextEncoder("utf-8")).encode("\n4:main:void:int,int 15:sub:int:int\n1:flag1:bool 1:PI:double\nthis.sub lib1.sum\nlib2.print lib1.pi"))])
+    let data = Buffer.concat([Buffer.from(headbuf),Buffer.from(size_buf),Buffer.from(retbuffer),Buffer.from(txt2arr("\n4:main:void:int,int 15:sub:int:int\n1:flag1:bool 1:PI:double\nthis.sub lib1.sum\nlib2.print lib1.pi"))])
     fs.writeFile("out.o", data, (err) => {
       if (err) throw err;
       console.log('Completed');
     });
+}
+
+function txt2arr(txt) {
+    return (new TextEncoder("utf-8")).encode(txt);
 }
 
 main("./test.asm");

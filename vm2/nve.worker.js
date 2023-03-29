@@ -164,7 +164,24 @@ class NVE {
 }
 
 let path = process.argv[2];
-console.log("File:",path);
-let a = new NVE(fs.readFileSync(path));
-a.runall();
-// console.log(a.getData())
+if (path==null) {
+    console.log("Failed to open file.");
+    return;
+}
+fs.stat( path , ( er , stat ) => {
+    if( er ){
+        console.log("Failed to open file.");
+        return;
+    }else{
+        if (stat.isFile()) {
+            console.log("File:",path);
+            let a = new NVE(fs.readFileSync(path));
+            a.runall();
+            // console.log(a.getData())
+        }
+        else {
+            console.log("Failed to open file.")
+            return;
+        }
+    }
+});
