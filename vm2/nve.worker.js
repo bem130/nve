@@ -6,7 +6,7 @@ class NVE {
         this.check(file);
         let _size = new Uint8Array((this.file.slice(6,10)))
         this.size = _size[0]+_size[1]*0x100+_size[2]*0x10000+_size[3]*0x1000000;
-        console.log(this.size)
+        console.log("Size:",this.size.toString(10))
         this.#memr = new Uint32Array(2**32); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
@@ -44,10 +44,10 @@ class NVE {
         //     }
         //     return ret
         // }
-        let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
+        // let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
         // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
         // console.log("")
-        console.log("[next]"," opcode:",this.prog(this.#progcnt).toString(16)," mnemonic:",ins[this.prog(this.#progcnt)]," immediate:",this.imme(this.#progcnt).toString(16))
+        // console.log("[next]"," opcode:",this.prog(this.#progcnt).toString(16)," mnemonic:",ins[this.prog(this.#progcnt)]," immediate:",this.imme(this.#progcnt).toString(16))
         let adr = function(n) {return n&((2**32)-1);};
         switch (this.prog(this.#progcnt)) {
             case 0: // push n スタックに即値を入れる
@@ -142,7 +142,7 @@ class NVE {
 
             // 入出力命令
             case 23: // out スタックトップの値を出力
-                console.log("[output] ",this.pop().toString(16));
+                console.log("[output]",this.pop().toString(16));
             break;
             default:
             break;
@@ -163,7 +163,8 @@ class NVE {
     endRunning() {return this.#progcnt>=this.size}
 }
 
-let path = "./out.o"
+let path = process.argv[2];
+console.log("File:",path);
 let a = new NVE(fs.readFileSync(path));
 a.runall();
 // console.log(a.getData())

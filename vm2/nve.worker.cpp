@@ -17,7 +17,7 @@ uint32_t framp = 0;
 
 int main(int argc,char* argv[]) {
     char* fname = argv[1];
-    std::cout << fname << std::endl;
+    std::cout << "File: " << fname << std::endl;
     std::ifstream ifs(fname, std::ios::in|std::ios::binary);
     if (ifs.fail()) {
         std::cerr << "Failed to open file." << std::endl;
@@ -37,7 +37,7 @@ int main(int argc,char* argv[]) {
         }
         i++;
     }
-    std::cout << "size " << size << std::endl;
+    std::cout << "size: " << size << std::endl;
     pdata = (uint8_t*)malloc(size*5);
     i=0;
     while (!ifs.eof()&&i<size*5) {
@@ -48,6 +48,7 @@ int main(int argc,char* argv[]) {
     // for (int a=0;a<size*5;a++) {
     //     std::cout << (int)pdata[a] << " ";
     // }
+    memr = (uint32_t*)malloc(sizeof(uint32_t)*memr_length);
     runall();
     return 0;
 }
@@ -85,7 +86,7 @@ void next() {
         std::cerr << "end runnning" << std::endl;
     }
 
-    std::cout << prog(progcnt) << " " << imme(progcnt) << " " << progcnt << std::endl;
+    //std::cout << prog(progcnt) << " " << imme(progcnt) << " " << progcnt << std::endl;
 
     uint64_t cs;
     switch (prog(progcnt))
@@ -172,7 +173,7 @@ void next() {
             push(!pop());
         break;
         case 23: // out
-            std::cout << pop() << std::endl;
+            std::cout << "[output] " << std::hex << pop() << std::endl;
         break;
         default:
         break;
