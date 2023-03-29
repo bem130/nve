@@ -6,6 +6,7 @@ class NVE {
         this.check(file);
         let _size = new Uint8Array((this.file.slice(6,10)))
         this.size = _size[0]+_size[1]*0x100+_size[2]*0x10000+_size[3]*0x1000000;
+        console.log(this.size)
         this.#memr = new Uint32Array(2**32); // 実行用スタック
         this.#progcnt = 0;
         this.#stackp = 0;
@@ -26,8 +27,7 @@ class NVE {
     pop() {
         this.#memr[this.#stackp] = 0;
         this.#stackp--;
-        let r = this.#memr[this.#stackp];
-        return r;
+        return this.#memr[this.#stackp];
     }
     next() { // 一つの命令を実行する
         if (this.endRunning()) {console.warn("end runnning")}
@@ -44,10 +44,10 @@ class NVE {
         //     }
         //     return ret
         // }
-        // let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
+        let ins = ["push","pop","call","ret","fram","setvar","getvar","setgvar","getgvar","setdata","getdata","jmp","ifjmp","add","addc","and","or","xor","equal","less","greater","not","notb","out"];
         // console.log("[internal state]"," mem:",memshow(this.#memr.slice(0,17),this.#stackp,this.#framp)," pc:",this.#progcnt.toString(16)," sp:",this.#stackp.toString(16)," fp:",this.#framp.toString(16))
         // console.log("")
-        // console.log("[next]"," opcode:",this.prog(this.#progcnt).toString(16)," mnemonic:",ins[this.prog(this.#progcnt)]," immediate:",this.imme(this.#progcnt).toString(16))
+        console.log("[next]"," opcode:",this.prog(this.#progcnt).toString(16)," mnemonic:",ins[this.prog(this.#progcnt)]," immediate:",this.imme(this.#progcnt).toString(16))
         let adr = function(n) {return n&((2**32)-1);};
         switch (this.prog(this.#progcnt)) {
             case 0: // push n スタックに即値を入れる
@@ -75,22 +75,22 @@ class NVE {
             break;
             // データ移動命令
             case 5: // setvar a a個目の局所変数に値を入れる
-                this.#memr[(this.#framp+this.imme(this.#progcnt))&((2**32)-1)] = this.pop();
+                this.#memr[(this.#framp+this.imme(this.#progcnt))&(4294967295)] = this.pop();
             break;
             case 6: // getvar a a個目の局所変数から値を複製する
-                this.push(this.#memr[(this.#framp+this.imme(this.#progcnt))&((2**32)-1)]);
+                this.push(this.#memr[(this.#framp+this.imme(this.#progcnt))&(4294967295)]);
             break;
             case 7: // setgvar a a個目のグローバル変数に値を入れる
-                this.#memr[(this.imme(this.#progcnt))&((2**32)-1)] = this.pop();
+                this.#memr[(this.imme(this.#progcnt))&(4294967295)] = this.pop();
             break;
             case 8: // getgvar a a個目のグローバル変数から値を複製する
-                this.push(this.#memr[(this.imme(this.#progcnt))&((2**32)-1)]);
+                this.push(this.#memr[(this.imme(this.#progcnt))&(4294967295)]);
             break;
             case 9: // setdata a a個目のヒープ領域に値を入れる
-                this.#memr[this.#memr.length-((this.imme(this.#progcnt))&((2**32)-1))] = this.pop();
+                this.#memr[this.#memr.length-((this.imme(this.#progcnt))&(4294967295))] = this.pop();
             break;
             case 10: // getdata a a個目のヒープ領域から値を複製する
-                this.push(this.#memr[this.#memr.length-((this.imme(this.#progcnt))&((2**32)-1))]);
+                this.push(this.#memr[this.#memr.length-((this.imme(this.#progcnt))&(4294967295))]);
             break;
             // ジャンプ命令
             case 11: // jmp
@@ -109,7 +109,7 @@ class NVE {
             case 14: // addc
                 let cs = this.pop()+this.pop()+this.pop();
                 this.push(cs>>>32);
-                this.push(cs&((2**32)-1));
+                this.push(cs&(4294967295));
             break;
             // 2項ビット演算
             case 15: // and
